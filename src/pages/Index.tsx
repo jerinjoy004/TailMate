@@ -1,12 +1,30 @@
-// Update this page (the content is just a fallback if you fail to update the page)
 
-const Index = () => {
+import React, { useEffect } from 'react';
+import Navigation from '@/components/Navigation';
+import Hero from '@/components/Hero';
+import Features from '@/components/Features';
+import HowItWorks from '@/components/HowItWorks';
+import UserRoles from '@/components/UserRoles';
+import Footer from '@/components/Footer';
+
+// Install framer-motion for animations
+<lov-add-dependency>framer-motion@latest</lov-add-dependency>
+
+const Index: React.FC = () => {
+  useEffect(() => {
+    document.title = 'Tailmate - Animal Welfare Platform';
+  }, []);
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-gray-600">Start building your amazing project here!</p>
-      </div>
+    <div className="min-h-screen flex flex-col">
+      <Navigation />
+      <main className="flex-grow">
+        <Hero />
+        <Features />
+        <HowItWorks />
+        <UserRoles />
+      </main>
+      <Footer />
     </div>
   );
 };
