@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, getStorageUrl } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import Button from '@/components/ui-components/Button';
@@ -124,7 +124,7 @@ const CreatePost: React.FC = () => {
           throw uploadError;
         }
         
-        imageUrl = `${supabase.storageUrl}/object/public/post-images/${filePath}`;
+        imageUrl = getStorageUrl('post-images', filePath);
       }
       
       // Create the post

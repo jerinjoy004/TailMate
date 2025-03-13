@@ -7,3 +7,8 @@ const SUPABASE_URL = "https://cfbeaktbdnnyndgfucfq.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNmYmVha3RiZG5ueW5kZ2Z1Y2ZxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDE4MzA5NTcsImV4cCI6MjA1NzQwNjk1N30.aDdSaju2t3DOU5TXCMRN0iM-qDs6zXkeijTNbF1dZSE";
 
 export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+
+// Define and export helper functions for storage URLs
+export const getStorageUrl = (bucketName: string, filePath: string) => {
+  return `${SUPABASE_URL}/storage/v1/object/public/${bucketName}/${filePath}`;
+};

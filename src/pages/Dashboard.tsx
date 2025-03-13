@@ -98,7 +98,7 @@ const Dashboard: React.FC = () => {
           {posts.map((post) => (
             <AnimatedSection
               key={post.id}
-              animation="slide-up"
+              animation="scale-in"
               className="bg-card border border-border rounded-lg overflow-hidden"
             >
               {/* Post header */}

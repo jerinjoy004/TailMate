@@ -117,7 +117,7 @@ const Notifications: React.FC = () => {
           {notifications.map((notification) => (
             <AnimatedSection
               key={notification.id}
-              animation="slide-up"
+              animation="scale-in"
               className={`p-4 rounded-lg border ${
                 notification.is_read ? 'bg-card border-border' : 'bg-primary/5 border-primary/20'
               }`}
