@@ -1,46 +1,34 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { Mail, Lock, User, ArrowRight } from 'lucide-react';
 import Button from '@/components/ui-components/Button';
-import { useToast } from '@/hooks/use-toast';
 import AnimatedSection from '@/components/ui-components/AnimatedSection';
+import { useAuth } from '@/contexts/AuthContext';
 
 const SignUp: React.FC = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [userType, setUserType] = useState('normal');
-  const [isLoading, setIsLoading] = useState(false);
-  const navigate = useNavigate();
-  const { toast } = useToast();
+  const [userType, setUserType] = useState<'normal' | 'volunteer' | 'doctor'>('normal');
+  const { signUp, loading, user } = useAuth();
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!name || !email || !password) {
-      toast({
-        title: "Error",
-        description: "Please fill in all required fields",
-        variant: "destructive",
-      });
-      return;
-    }
+    if (!name || !email || !password) return;
     
-    setIsLoading(true);
-    
-    // This is where you would connect to your authentication service
-    // For now, we'll simulate a success
-    setTimeout(() => {
-      setIsLoading(false);
-      toast({
-        title: "Success",
-        description: "Your account has been created!",
-      });
-      navigate('/signin'); // Redirect to sign in after successful signup
-    }, 1500);
+    await signUp(email, password, {
+      username: name,
+      userType,
+    });
   };
+
+  // If user is already logged in, redirect to dashboard
+  if (user) {
+    return <Navigate to="/dashboard" replace />;
+  }
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -159,9 +147,9 @@ const SignUp: React.FC = () => {
               className="w-full"
               size="lg"
               type="submit"
-              disabled={isLoading}
+              disabled={loading}
             >
-              {isLoading ? (
+              {loading ? (
                 <span className="flex items-center justify-center">
                   <motion.div
                     className="h-5 w-5 border-2 border-t-transparent border-primary-foreground rounded-full"
