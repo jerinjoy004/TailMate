@@ -1,5 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import Button from './ui-components/Button';
 
@@ -31,9 +32,9 @@ const Navigation: React.FC = () => {
     >
       <div className="container flex items-center justify-between">
         <div className="flex items-center">
-          <a href="/" className="text-xl font-semibold text-primary">
+          <Link to="/" className="text-xl font-semibold text-primary">
             Tailmate
-          </a>
+          </Link>
         </div>
         
         <nav className="hidden md:flex items-center space-x-8">
@@ -58,16 +59,20 @@ const Navigation: React.FC = () => {
         </nav>
         
         <div className="flex items-center space-x-4">
-          <Button 
-            variant="outline" 
-            size="sm"
-            className="hidden md:flex"
-          >
-            Sign In
-          </Button>
-          <Button size="sm">
-            Get Started
-          </Button>
+          <Link to="/signin">
+            <Button 
+              variant="outline" 
+              size="sm"
+              className="hidden md:flex"
+            >
+              Sign In
+            </Button>
+          </Link>
+          <Link to="/signup">
+            <Button size="sm">
+              Get Started
+            </Button>
+          </Link>
         </div>
       </div>
     </header>
