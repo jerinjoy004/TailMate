@@ -14,9 +14,9 @@ interface Post {
   created_at: string;
   location?: string;
   comments_count: number;
-  user: {
-    name: string;
-    userType: string;
+  user?: {
+    name?: string;
+    userType?: string;
   };
 }
 
@@ -33,11 +33,7 @@ const Dashboard: React.FC = () => {
           .from('posts')
           .select(`
             *,
-            user:user_id (
-              name,
-              userType
-            ),
-            comments_count:comments(count)
+            comments:comments(count)
           `)
           .order('created_at', { ascending: false });
 
@@ -46,9 +42,38 @@ const Dashboard: React.FC = () => {
         }
 
         if (data) {
-          setPosts(data as any);
+          // After getting posts, fetch user profiles separately
+          const postsWithUsers = [...data] as Post[];
+          
+          // Get unique user IDs
+          const userIds = [...new Set(postsWithUsers.map(post => post.user_id))];
+          
+          if (userIds.length > 0) {
+            const { data: profiles, error: profilesError } = await supabase
+              .from('profiles')
+              .select('id, username, usertype')
+              .in('id', userIds);
+              
+            if (profilesError) {
+              console.error('Error fetching profiles:', profilesError);
+            } else if (profiles) {
+              // Map profiles to posts
+              postsWithUsers.forEach(post => {
+                const userProfile = profiles.find(profile => profile.id === post.user_id);
+                if (userProfile) {
+                  post.user = {
+                    name: userProfile.username,
+                    userType: userProfile.usertype
+                  };
+                }
+              });
+            }
+          }
+          
+          setPosts(postsWithUsers);
         }
       } catch (error: any) {
+        console.error('Error fetching posts:', error);
         toast({
           title: "Error",
           description: error.message || "Failed to load posts",
@@ -75,7 +100,16 @@ const Dashboard: React.FC = () => {
     return () => {
       supabase.removeChannel(postsSubscription);
     };
-  }, []);
+  }, [toast]);
+
+  const getDisplayName = (post: Post) => {
+    return post.user?.name || 'Unknown User';
+  };
+
+  const getInitial = (post: Post) => {
+    const name = post.user?.name;
+    return name ? name[0].toUpperCase() : 'U';
+  };
 
   if (loading) {
     return (
@@ -104,10 +138,10 @@ const Dashboard: React.FC = () => {
               {/* Post header */}
               <div className="p-4 flex items-center">
                 <div className="w-10 h-10 bg-primary/10 text-primary rounded-full flex items-center justify-center mr-3">
-                  {post.user?.name?.[0] || 'U'}
+                  {getInitial(post)}
                 </div>
                 <div>
-                  <h3 className="font-medium">{post.user?.name || 'Unknown User'}</h3>
+                  <h3 className="font-medium">{getDisplayName(post)}</h3>
                   <p className="text-xs text-muted-foreground flex items-center">
                     {new Date(post.created_at).toLocaleString()}
                     {post.location && (
