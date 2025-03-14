@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -11,9 +12,21 @@ const CreateDonation: React.FC = () => {
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
   const [loading, setLoading] = useState(false);
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  // Check if user is a volunteer
+  useEffect(() => {
+    if (profile && profile.userType !== 'volunteer') {
+      toast({
+        title: "Permission Denied",
+        description: "Only volunteers can create donation requests",
+        variant: "destructive",
+      });
+      navigate('/dashboard/donations');
+    }
+  }, [profile, navigate, toast]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,6 +35,16 @@ const CreateDonation: React.FC = () => {
       toast({
         title: "Authentication Error",
         description: "You must be logged in to create a donation request",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    // Double check that user is a volunteer
+    if (profile?.userType !== 'volunteer') {
+      toast({
+        title: "Permission Denied",
+        description: "Only volunteers can create donation requests",
         variant: "destructive",
       });
       return;

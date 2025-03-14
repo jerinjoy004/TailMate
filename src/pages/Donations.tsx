@@ -25,7 +25,7 @@ interface DonationRequest {
 const Donations: React.FC = () => {
   const [donationRequests, setDonationRequests] = useState<DonationRequest[]>([]);
   const [loading, setLoading] = useState(true);
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -84,7 +84,7 @@ const Donations: React.FC = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Donation Requests</h1>
-        {user && (
+        {user && profile?.userType === 'volunteer' && (
           <Button onClick={() => navigate('/dashboard/create-donation')}>
             <PlusCircle className="mr-2 h-4 w-4" />
             Create Request
@@ -137,10 +137,12 @@ const Donations: React.FC = () => {
         ) : (
           <Card className="p-6 text-center">
             <p className="mb-4">No donation requests yet.</p>
-            <Button onClick={() => navigate('/dashboard/create-donation')}>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Create Donation Request
-            </Button>
+            {profile?.userType === 'volunteer' && (
+              <Button onClick={() => navigate('/dashboard/create-donation')}>
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Create Donation Request
+              </Button>
+            )}
           </Card>
         )}
       </AnimatedSection>

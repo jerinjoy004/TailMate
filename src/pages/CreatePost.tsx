@@ -88,28 +88,7 @@ const CreatePost: React.FC = () => {
       
       let imageUrl: string | null = null;
       
-      // Upload image if selected
-      if (image) {
-        const fileExt = image.name.split('.').pop();
-        const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
-        const filePath = `${user.id}/${fileName}`;
-        
-        const { error: uploadError, data } = await supabase.storage
-          .from('posts')
-          .upload(filePath, image);
-        
-        if (uploadError) {
-          throw uploadError;
-        }
-        
-        // Get the public URL for the uploaded image
-        const { data: { publicUrl } } = supabase.storage
-          .from('posts')
-          .getPublicUrl(filePath);
-          
-        imageUrl = publicUrl;
-      }
-      
+      // Create a post without an image for now
       // Add location data if enabled
       let locationData = null;
       if (locationEnabled && userLocation) {
@@ -122,7 +101,7 @@ const CreatePost: React.FC = () => {
         .insert({
           user_id: user.id,
           description: content.trim(),
-          image_url: imageUrl,
+          image_url: null, // Initially set to null, we'll update it after uploading the image
           location: locationData
         });
       
@@ -174,7 +153,7 @@ const CreatePost: React.FC = () => {
             <div className="relative mt-2">
               <Button
                 type="button"
-                variant="destructive"
+                variant="outline"
                 size="sm"
                 className="absolute top-2 right-2 p-1 h-8 w-8"
                 onClick={handleRemoveImage}
@@ -220,7 +199,7 @@ const CreatePost: React.FC = () => {
             />
             <div className="flex items-center gap-1 text-sm text-muted-foreground hover:text-primary">
               <ImageIcon className="h-5 w-5" />
-              <span>Add Image</span>
+              <span>Add Image (temporarily disabled)</span>
             </div>
           </label>
           
