@@ -1,12 +1,12 @@
 
 import React, { useState } from 'react';
 import { Link, Outlet, useLocation, Navigate } from 'react-router-dom';
-import { Home, Bell, User, LogOut, Plus } from 'lucide-react';
+import { Home, Bell, User, LogOut, Plus, Users, Calendar, Coins } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 
 const DashboardLayout: React.FC = () => {
-  const { user, signOut, userLoading } = useAuth();
+  const { user, profile, signOut, userLoading } = useAuth();
   const location = useLocation();
 
   // If still loading auth state, show nothing
@@ -19,11 +19,32 @@ const DashboardLayout: React.FC = () => {
     return <Navigate to="/signin" replace />;
   }
 
-  const navItems = [
-    { icon: Home, label: 'Home', path: '/dashboard' },
-    { icon: Bell, label: 'Notifications', path: '/dashboard/notifications' },
-    { icon: User, label: 'Profile', path: '/dashboard/profile' },
-  ];
+  // Define navigation items based on user role
+  const getNavItems = () => {
+    const commonItems = [
+      { icon: Home, label: 'Home', path: '/dashboard' },
+      { icon: Bell, label: 'Notifications', path: '/dashboard/notifications' },
+      { icon: User, label: 'Profile', path: '/dashboard/profile' },
+    ];
+
+    // Add volunteer-specific items
+    if (profile?.userType === 'volunteer') {
+      return [
+        ...commonItems,
+        { icon: Users, label: 'Nearby', path: '/dashboard/volunteer' },
+        { icon: Calendar, label: 'Doctors', path: '/dashboard/doctors' },
+        { icon: Coins, label: 'Donations', path: '/dashboard/donations' },
+      ];
+    }
+
+    // Normal user items
+    return [
+      ...commonItems,
+      { icon: Coins, label: 'Donations', path: '/dashboard/donations' },
+    ];
+  };
+
+  const navItems = getNavItems();
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
@@ -33,25 +54,32 @@ const DashboardLayout: React.FC = () => {
           <Link to="/" className="text-xl font-semibold text-primary">
             Tailmate
           </Link>
-          <button 
-            onClick={() => signOut()} 
-            className="flex items-center text-sm font-medium text-muted-foreground hover:text-foreground"
-          >
-            <LogOut className="mr-2 h-4 w-4" />
-            Sign Out
-          </button>
+          <div className="flex items-center gap-4">
+            {profile?.userType === 'volunteer' && (
+              <span className="text-xs font-medium px-2 py-1 bg-primary/10 text-primary rounded">
+                Volunteer
+              </span>
+            )}
+            <button 
+              onClick={() => signOut()} 
+              className="flex items-center text-sm font-medium text-muted-foreground hover:text-foreground"
+            >
+              <LogOut className="mr-2 h-4 w-4" />
+              Sign Out
+            </button>
+          </div>
         </div>
       </header>
 
       {/* Main content */}
-      <main className="flex-1 container py-6">
+      <main className="flex-1 container py-6 pb-20 sm:pb-6">
         <Outlet />
       </main>
 
       {/* Bottom navigation for mobile */}
       <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border py-2 sm:hidden">
-        <div className="container grid grid-cols-3 gap-1">
-          {navItems.map((item) => {
+        <div className="container grid grid-cols-4 gap-1">
+          {navItems.slice(0, 4).map((item) => {
             const isActive = location.pathname === item.path;
             return (
               <Link

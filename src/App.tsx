@@ -18,6 +18,8 @@ import Comments from "./pages/Comments";
 import Donations from "./pages/Donations";
 import CreateDonation from "./pages/CreateDonation";
 import DonateForm from "./pages/DonateForm";
+import VolunteerDashboard from "./pages/VolunteerDashboard";
+import DoctorAvailability from "./pages/DoctorAvailability";
 
 const queryClient = new QueryClient();
 
@@ -43,6 +45,10 @@ const App = () => (
               <Route path="donations" element={<Donations />} />
               <Route path="create-donation" element={<CreateDonation />} />
               <Route path="donate/:donationId" element={<DonateForm />} />
+              
+              {/* Volunteer routes */}
+              <Route path="volunteer" element={<VolunteerDashboard />} />
+              <Route path="doctors" element={<DoctorAvailability />} />
             </Route>
             
             {/* Catch-all route */}
