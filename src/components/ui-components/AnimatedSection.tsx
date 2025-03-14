@@ -7,13 +7,15 @@ interface AnimatedSectionProps {
   className?: string;
   delay?: number;
   animation?: 'fade-up' | 'fade-in' | 'scale-in';
+  onClick?: () => void;
 }
 
 const AnimatedSection: React.FC<AnimatedSectionProps> = ({
   children,
   className,
   delay = 0,
-  animation = 'fade-up'
+  animation = 'fade-up',
+  onClick
 }) => {
   const [isVisible, setIsVisible] = useState(false);
   const sectionRef = useRef<HTMLDivElement>(null);
@@ -50,12 +52,14 @@ const AnimatedSection: React.FC<AnimatedSectionProps> = ({
       ref={sectionRef}
       className={cn(
         isVisible ? `animate-${animation}` : 'opacity-0',
-        className
+        className,
+        onClick ? 'cursor-pointer' : ''
       )}
       style={{ 
         animationDelay: `${delay}ms`,
         animationFillMode: 'forwards' 
       }}
+      onClick={onClick}
     >
       {children}
     </div>

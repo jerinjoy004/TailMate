@@ -14,6 +14,10 @@ import Dashboard from "./pages/Dashboard";
 import Notifications from "./pages/Notifications";
 import Profile from "./pages/Profile";
 import CreatePost from "./pages/CreatePost";
+import Comments from "./pages/Comments";
+import Donations from "./pages/Donations";
+import CreateDonation from "./pages/CreateDonation";
+import DonateForm from "./pages/DonateForm";
 
 const queryClient = new QueryClient();
 
@@ -35,6 +39,10 @@ const App = () => (
               <Route path="notifications" element={<Notifications />} />
               <Route path="profile" element={<Profile />} />
               <Route path="create-post" element={<CreatePost />} />
+              <Route path="comments/:postId" element={<Comments />} />
+              <Route path="donations" element={<Donations />} />
+              <Route path="create-donation" element={<CreateDonation />} />
+              <Route path="donate/:donationId" element={<DonateForm />} />
             </Route>
             
             {/* Catch-all route */}

@@ -2,9 +2,11 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { MessageCircle, Heart, Share } from 'lucide-react';
+import { MessageCircle, Share, Coins } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import AnimatedSection from '@/components/ui-components/AnimatedSection';
+import { useNavigate } from 'react-router-dom';
+import Button from '@/components/ui-components/Button';
 
 interface Post {
   id: string;
@@ -13,7 +15,7 @@ interface Post {
   image_url?: string;
   created_at: string;
   location?: string;
-  comments_count: number;
+  comments?: { count: number }[];
   user?: {
     name?: string;
     userType?: string;
@@ -25,6 +27,7 @@ const Dashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchPosts = async () => {
@@ -43,7 +46,7 @@ const Dashboard: React.FC = () => {
 
         if (data) {
           // After getting posts, fetch user profiles separately
-          const postsWithUsers = [...data] as Post[];
+          const postsWithUsers = [...data];
           
           // Get unique user IDs
           const userIds = [...new Set(postsWithUsers.map(post => post.user_id))];
@@ -111,6 +114,36 @@ const Dashboard: React.FC = () => {
     return name ? name[0].toUpperCase() : 'U';
   };
 
+  const handleComment = (postId: string) => {
+    navigate(`/dashboard/comments/${postId}`);
+  };
+
+  const handleShare = async (post: Post) => {
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: `Post by ${getDisplayName(post)}`,
+          text: post.description,
+          url: window.location.origin + `/dashboard/posts/${post.id}`
+        });
+      } else {
+        // Fallback for browsers that don't support Web Share API
+        navigator.clipboard.writeText(window.location.origin + `/dashboard/posts/${post.id}`);
+        toast({
+          title: "Link copied!",
+          description: "Post link copied to clipboard",
+        });
+      }
+    } catch (error: any) {
+      console.error('Error sharing post:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to share post",
+        variant: "destructive",
+      });
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -121,7 +154,18 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-20 sm:pb-0">
-      <h1 className="text-2xl font-bold">Home Feed</h1>
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold">Home Feed</h1>
+        <Button 
+          variant="primary" 
+          size="sm" 
+          onClick={() => navigate('/dashboard/donations')}
+          className="flex items-center gap-1"
+        >
+          <Coins className="h-4 w-4" />
+          <span>Donation Requests</span>
+        </Button>
+      </div>
       
       {posts.length === 0 ? (
         <div className="text-center py-10 text-muted-foreground">
@@ -172,15 +216,17 @@ const Dashboard: React.FC = () => {
               
               {/* Post actions */}
               <div className="flex border-t border-border">
-                <button className="flex-1 py-3 flex items-center justify-center text-sm text-muted-foreground hover:bg-muted transition-colors">
+                <button 
+                  onClick={() => handleComment(post.id)}
+                  className="flex-1 py-3 flex items-center justify-center text-sm text-muted-foreground hover:bg-muted transition-colors"
+                >
                   <MessageCircle className="w-4 h-4 mr-2" />
-                  <span>Comment{post.comments_count > 0 ? ` (${post.comments_count})` : ''}</span>
+                  <span>Comment{post.comments && post.comments.length > 0 ? ` (${post.comments[0].count})` : ''}</span>
                 </button>
-                <button className="flex-1 py-3 flex items-center justify-center text-sm text-muted-foreground hover:bg-muted transition-colors border-l border-r border-border">
-                  <Heart className="w-4 h-4 mr-2" />
-                  <span>Like</span>
-                </button>
-                <button className="flex-1 py-3 flex items-center justify-center text-sm text-muted-foreground hover:bg-muted transition-colors">
+                <button 
+                  onClick={() => handleShare(post)}
+                  className="flex-1 py-3 flex items-center justify-center text-sm text-muted-foreground hover:bg-muted transition-colors border-l border-border"
+                >
                   <Share className="w-4 h-4 mr-2" />
                   <span>Share</span>
                 </button>
