@@ -41,6 +41,36 @@ export type Database = {
           },
         ]
       }
+      donation_requests: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string
+          fulfilled: boolean
+          id: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          description: string
+          fulfilled?: boolean
+          id?: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string
+          fulfilled?: boolean
+          id?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string | null

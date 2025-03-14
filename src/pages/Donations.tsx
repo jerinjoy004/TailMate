@@ -33,16 +33,17 @@ const Donations: React.FC = () => {
     const fetchDonations = async () => {
       try {
         setLoading(true);
+        // Use any type temporarily to work around type issues
         const { data, error } = await supabase
           .from('donation_requests')
           .select('*')
-          .order('created_at', { ascending: false });
+          .order('created_at', { ascending: false }) as any;
         
         if (error) throw error;
         
         if (data) {
           // Get unique user IDs
-          const userIds = [...new Set(data.map(donation => donation.user_id))];
+          const userIds = [...new Set(data.map((donation: any) => donation.user_id))];
           
           // Fetch user profiles
           const { data: profiles, error: profilesError } = await supabase
@@ -53,7 +54,7 @@ const Donations: React.FC = () => {
           if (profilesError) throw profilesError;
           
           // Map profiles to donations
-          const donationsWithUsers = data.map(donation => {
+          const donationsWithUsers = data.map((donation: any) => {
             const userProfile = profiles.find((profile: any) => profile.id === donation.user_id);
             return {
               ...donation,
@@ -64,7 +65,7 @@ const Donations: React.FC = () => {
             };
           });
           
-          setDonations(donationsWithUsers);
+          setDonations(donationsWithUsers as DonationRequest[]);
         }
       } catch (error: any) {
         console.error('Error fetching donation requests:', error);
@@ -184,7 +185,7 @@ const Donations: React.FC = () => {
                   ) : (
                     <Button 
                       size="sm" 
-                      onClick={() => handleDonate(donation.id)}
+                      onClick={() => navigate(`/dashboard/donate/${donation.id}`)}
                       className="flex items-center gap-1"
                     >
                       <Heart className="h-4 w-4" />

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -39,7 +38,7 @@ const DonateForm: React.FC = () => {
       try {
         setLoading(true);
         
-        const { data, error } = await supabase
+        const { data, error } = await (supabase as any)
           .from('donation_requests')
           .select('*')
           .eq('id', donationId)
@@ -47,7 +46,6 @@ const DonateForm: React.FC = () => {
         
         if (error) throw error;
         
-        // Fetch user profile
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
           .select('username')
@@ -57,13 +55,18 @@ const DonateForm: React.FC = () => {
         if (profileError) throw profileError;
         
         setDonation({
-          ...data,
+          id: data.id,
+          title: data.title,
+          description: data.description,
+          amount: data.amount,
+          created_at: data.created_at,
+          user_id: data.user_id,
+          fulfilled: data.fulfilled,
           user: {
             name: profile.username
           }
         });
         
-        // Pre-fill amount with the requested amount
         setAmount(data.amount.toString());
       } catch (error: any) {
         console.error('Error fetching donation request:', error);
@@ -99,17 +102,13 @@ const DonateForm: React.FC = () => {
     try {
       setSubmitting(true);
       
-      // In a real app, this would integrate with a payment processor
-      // For now, we'll just mark the donation as fulfilled
-      
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('donation_requests')
         .update({ fulfilled: true })
         .eq('id', donation.id);
       
       if (error) throw error;
       
-      // Create a notification for the donation recipient
       await supabase
         .from('notifications')
         .insert({

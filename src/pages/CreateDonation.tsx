@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -41,7 +40,7 @@ const CreateDonation: React.FC = () => {
     try {
       setLoading(true);
       
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from('donation_requests')
         .insert({
           title: title.trim(),

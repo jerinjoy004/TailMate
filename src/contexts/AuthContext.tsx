@@ -51,7 +51,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           if (error) {
             console.error('Error fetching user profile:', error);
           } else if (data) {
-            setProfile(data as UserProfile);
+            // Map database fields to our UserProfile interface
+            setProfile({
+              id: data.id,
+              username: data.username,
+              userType: data.usertype as 'normal' | 'volunteer' | 'doctor',
+              locality: data.locality,
+              licenseNumber: data.licensenumber,
+              isVerified: data.isverified
+            });
           }
         }
       } catch (error) {
@@ -78,7 +86,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (error) {
           console.error('Error fetching user profile:', error);
         } else if (data) {
-          setProfile(data as UserProfile);
+          // Map database fields to our UserProfile interface
+          setProfile({
+            id: data.id,
+            username: data.username,
+            userType: data.usertype as 'normal' | 'volunteer' | 'doctor',
+            locality: data.locality,
+            licenseNumber: data.licensenumber,
+            isVerified: data.isverified
+          });
         }
       } else if (event === 'SIGNED_OUT') {
         setUser(null);

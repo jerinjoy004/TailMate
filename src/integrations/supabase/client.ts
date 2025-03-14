@@ -12,3 +12,43 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
 export const getStorageUrl = (bucketName: string, filePath: string) => {
   return `${SUPABASE_URL}/storage/v1/object/public/${bucketName}/${filePath}`;
 };
+
+// Add manual type definition for donation_requests table
+// This is needed until the types file is regenerated
+declare module '@supabase/supabase-js' {
+  interface Database {
+    public: {
+      Tables: {
+        donation_requests: {
+          Row: {
+            id: string;
+            user_id: string;
+            title: string;
+            description: string;
+            amount: number;
+            created_at: string;
+            fulfilled: boolean;
+          };
+          Insert: {
+            id?: string;
+            user_id: string;
+            title: string;
+            description: string;
+            amount: number;
+            created_at?: string;
+            fulfilled?: boolean;
+          };
+          Update: {
+            id?: string;
+            user_id?: string;
+            title?: string;
+            description?: string;
+            amount?: number;
+            created_at?: string;
+            fulfilled?: boolean;
+          };
+        }
+      }
+    }
+  }
+}
