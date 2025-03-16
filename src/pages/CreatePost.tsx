@@ -4,10 +4,11 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Image as ImageIcon, MapPin, X } from 'lucide-react';
 import Button from '@/components/ui-components/Button';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
+import { supabase, getStorageUrl } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { v4 as uuidv4 } from 'uuid';
 
 const CreatePost: React.FC = () => {
   const [content, setContent] = useState('');
@@ -88,7 +89,42 @@ const CreatePost: React.FC = () => {
       
       let imageUrl: string | null = null;
       
-      // Create a post without an image for now
+      // Upload image if present
+      if (image) {
+        const fileExt = image.name.split('.').pop();
+        const fileName = `${uuidv4()}.${fileExt}`;
+        const filePath = `${user.id}/${fileName}`;
+        
+        // Check if posts bucket exists, create if it doesn't
+        const { data: bucketExists, error: bucketCheckError } = await supabase
+          .storage
+          .getBucket('posts');
+          
+        if (bucketCheckError && bucketCheckError.message.includes('not found')) {
+          // Bucket doesn't exist, create it
+          const { error: createBucketError } = await supabase
+            .storage
+            .createBucket('posts', {
+              public: true
+            });
+            
+          if (createBucketError) {
+            throw createBucketError;
+          }
+        }
+        
+        // Upload the file
+        const { error: uploadError } = await supabase
+          .storage
+          .from('posts')
+          .upload(filePath, image);
+          
+        if (uploadError) throw uploadError;
+        
+        // Get the public URL
+        imageUrl = getStorageUrl('posts', filePath);
+      }
+      
       // Add location data if enabled
       let locationData = null;
       if (locationEnabled && userLocation) {
@@ -101,7 +137,7 @@ const CreatePost: React.FC = () => {
         .insert({
           user_id: user.id,
           description: content.trim(),
-          image_url: null, // Initially set to null, we'll update it after uploading the image
+          image_url: imageUrl,
           location: locationData
         });
       
@@ -199,7 +235,7 @@ const CreatePost: React.FC = () => {
             />
             <div className="flex items-center gap-1 text-sm text-muted-foreground hover:text-primary">
               <ImageIcon className="h-5 w-5" />
-              <span>Add Image (temporarily disabled)</span>
+              <span>Add Image</span>
             </div>
           </label>
           
