@@ -78,12 +78,15 @@ const Donations: React.FC = () => {
       currency: 'USD',
     }).format(amount);
   };
+  
+  // Determine if the user can create donation requests (only volunteers)
+  const canCreateDonation = profile?.userType === 'volunteer';
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Donation Requests</h1>
-        {user && profile?.userType === 'volunteer' && (
+        {user && canCreateDonation && (
           <Button onClick={() => navigate('/dashboard/create-donation')}>
             <PlusCircle className="mr-2 h-4 w-4" />
             Create Request
@@ -136,7 +139,7 @@ const Donations: React.FC = () => {
         ) : (
           <Card className="p-6 text-center">
             <p className="mb-4">No donation requests yet.</p>
-            {profile?.userType === 'volunteer' && (
+            {canCreateDonation && (
               <Button onClick={() => navigate('/dashboard/create-donation')}>
                 <PlusCircle className="mr-2 h-4 w-4" />
                 Create Donation Request

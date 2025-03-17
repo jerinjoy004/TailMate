@@ -10,6 +10,8 @@ import { useNavigate } from 'react-router-dom';
 import AnimatedSection from '@/components/ui-components/AnimatedSection';
 import { useToast } from '@/hooks/use-toast';
 import Button from '@/components/ui-components/Button';
+import { useQuery } from '@tanstack/react-query';
+import { useLocation } from '@/hooks/use-location';
 
 interface Post {
   created_at: string;
@@ -27,47 +29,10 @@ interface Post {
 }
 
 const VolunteerDashboard: React.FC = () => {
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
-  const [locationPermission, setLocationPermission] = useState<boolean>(false);
   const { user, profile } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-
-  // Request user location
-  useEffect(() => {
-    const getUserLocation = () => {
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            setUserLocation({
-              latitude: position.coords.latitude,
-              longitude: position.coords.longitude
-            });
-            setLocationPermission(true);
-          },
-          (error) => {
-            console.error('Error getting location:', error);
-            setLocationPermission(false);
-            toast({
-              title: "Location Access Denied",
-              description: "Please enable location access to see posts near you.",
-              variant: "destructive",
-            });
-          }
-        );
-      } else {
-        toast({
-          title: "Geolocation Not Supported",
-          description: "Your browser doesn't support geolocation.",
-          variant: "destructive",
-        });
-      }
-    };
-
-    getUserLocation();
-  }, [toast]);
+  const { location: userLocation, loading: locationLoading, error: locationError } = useLocation();
 
   // Calculate distance between two coordinates in kilometers
   const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
@@ -87,85 +52,78 @@ const VolunteerDashboard: React.FC = () => {
     return deg * (Math.PI/180);
   };
 
-  // Fetch posts when location is available
-  useEffect(() => {
-    const fetchPosts = async () => {
-      if (!userLocation) return;
+  // Fetch posts using React Query
+  const { data: posts = [], isLoading } = useQuery({
+    queryKey: ['nearby-posts', userLocation],
+    queryFn: async () => {
+      if (!userLocation) return [];
       
-      try {
-        const { data, error } = await supabase
-          .from('posts')
-          .select(`
-            *,
-            comments:comments(count)
-          `)
-          .order('created_at', { ascending: false });
+      const { data, error } = await supabase
+        .from('posts')
+        .select(`
+          *,
+          comments:comments(count)
+        `)
+        .order('created_at', { ascending: false });
 
-        if (error) throw error;
+      if (error) throw error;
 
-        if (data) {
-          // Fetch user profiles for each post
-          const postsWithProfiles = await Promise.all(
-            data.map(async (post) => {
-              const { data: profileData } = await supabase
-                .from('profiles')
-                .select('username, usertype, locality')
-                .eq('id', post.user_id)
-                .single();
-              
-              // Parse location if available
-              let postLocation = null;
-              if (post.location) {
-                try {
-                  // Assuming location is stored as "latitude,longitude"
-                  const [lat, lng] = post.location.split(',').map(Number);
-                  if (!isNaN(lat) && !isNaN(lng)) {
-                    const distance = calculateDistance(
-                      userLocation.latitude, 
-                      userLocation.longitude,
-                      lat, 
-                      lng
-                    );
-                    return { 
-                      ...post, 
-                      profile: profileData, 
-                      distance: distance 
-                    };
-                  }
-                } catch (e) {
-                  console.error('Error parsing location:', e);
-                }
+      if (!data) return [];
+
+      // Fetch user profiles for each post
+      const postsWithProfiles = await Promise.all(
+        data.map(async (post) => {
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('username, usertype, locality')
+            .eq('id', post.user_id)
+            .single();
+          
+          // Parse location if available
+          if (post.location) {
+            try {
+              // Assuming location is stored as "latitude,longitude"
+              const [lat, lng] = post.location.split(',').map(Number);
+              if (!isNaN(lat) && !isNaN(lng)) {
+                const distance = calculateDistance(
+                  userLocation.latitude, 
+                  userLocation.longitude,
+                  lat, 
+                  lng
+                );
+                return { 
+                  ...post, 
+                  profile: profileData, 
+                  distance: distance 
+                };
               }
-              
-              return { ...post, profile: profileData, distance: null };
-            })
-          );
+            } catch (e) {
+              console.error('Error parsing location:', e);
+            }
+          }
           
-          // Filter posts within 10km radius
-          const nearbyPosts = postsWithProfiles.filter(post => {
-            return post.distance !== null && post.distance <= 10;
-          });
-          
-          // Sort by distance
-          nearbyPosts.sort((a, b) => {
-            if (a.distance === null) return 1;
-            if (b.distance === null) return -1;
-            return a.distance - b.distance;
-          });
-          
-          setPosts(nearbyPosts);
-        }
-      } catch (error: any) {
-        console.error('Error fetching posts:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (userLocation) {
-      fetchPosts();
-    }
-  }, [userLocation]);
+          return { ...post, profile: profileData, distance: null };
+        })
+      );
+      
+      // Filter posts within 15km radius (increased from 10km)
+      const nearbyPosts = postsWithProfiles.filter(post => {
+        return post.distance !== null && post.distance <= 15;
+      });
+      
+      // Sort by distance
+      nearbyPosts.sort((a, b) => {
+        if (a.distance === null) return 1;
+        if (b.distance === null) return -1;
+        return a.distance - b.distance;
+      });
+      
+      return nearbyPosts;
+    },
+    enabled: !!userLocation,
+    staleTime: 60000, // 1 minute cache
+    refetchOnWindowFocus: false,
+  });
 
   const handleShare = (post: Post) => {
     if (navigator.share) {
@@ -210,16 +168,16 @@ const VolunteerDashboard: React.FC = () => {
   return (
     <div className="space-y-6">
       <AnimatedSection animation="fade-in" className="space-y-4">
-        <h1 className="text-2xl font-bold">Nearby Posts (10km Radius)</h1>
+        <h1 className="text-2xl font-bold">Nearby Posts (15km Radius)</h1>
         
-        {!locationPermission ? (
+        {locationError ? (
           <Card className="p-6 text-center">
             <p className="mb-4">Please enable location access to see posts near you.</p>
             <Button onClick={() => window.location.reload()}>
               Retry Location Access
             </Button>
           </Card>
-        ) : loading ? (
+        ) : isLoading || locationLoading ? (
           <div className="space-y-4">
             {[1, 2, 3].map((i) => (
               <Card key={i} className="p-6 animate-pulse">
@@ -255,6 +213,7 @@ const VolunteerDashboard: React.FC = () => {
                       src={post.image_url} 
                       alt="Post" 
                       className="absolute inset-0 w-full h-full object-cover"
+                      loading="lazy"
                     />
                   </div>
                 )}
@@ -290,7 +249,7 @@ const VolunteerDashboard: React.FC = () => {
           </div>
         ) : (
           <Card className="p-6 text-center">
-            <p className="mb-4">No posts found within 10km of your location.</p>
+            <p className="mb-4">No posts found within 15km of your location.</p>
           </Card>
         )}
       </AnimatedSection>
