@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Card } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Avatar } from '@/components/ui/avatar';
-import { Share, MessageCircle, MapPin } from 'lucide-react';
+import { Share, MessageCircle, MapPin, AlertTriangle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import AnimatedSection from '@/components/ui-components/AnimatedSection';
 import { useToast } from '@/hooks/use-toast';
@@ -25,14 +25,14 @@ interface Post {
     username: string | null;
     usertype: string;
   };
-  distance?: number;
+  distance?: number | null;
 }
 
 const VolunteerDashboard: React.FC = () => {
   const { user, profile } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { location: userLocation, loading: locationLoading, error: locationError } = useLocation();
+  const { location: userLocation, loading: locationLoading, error: locationError, requestPermission } = useLocation();
 
   // Calculate distance between two coordinates in kilometers
   const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
@@ -52,77 +52,103 @@ const VolunteerDashboard: React.FC = () => {
     return deg * (Math.PI/180);
   };
 
-  // Fetch posts using React Query
-  const { data: posts = [], isLoading } = useQuery({
-    queryKey: ['nearby-posts', userLocation],
+  // Fetch posts using React Query with better error handling
+  const { data: posts = [], isLoading, error, refetch } = useQuery({
+    queryKey: ['nearby-posts', userLocation ? `${userLocation.latitude},${userLocation.longitude}` : 'no-location'],
     queryFn: async () => {
-      if (!userLocation) return [];
-      
-      const { data, error } = await supabase
-        .from('posts')
-        .select(`
-          *,
-          comments:comments(count)
-        `)
-        .order('created_at', { ascending: false });
+      try {
+        if (!userLocation) {
+          console.log('No user location available for fetching posts');
+          return [];
+        }
+        
+        console.log('Fetching posts with user location:', userLocation);
+        
+        const { data, error } = await supabase
+          .from('posts')
+          .select(`
+            *,
+            comments:comments(count)
+          `)
+          .order('created_at', { ascending: false });
 
-      if (error) throw error;
+        if (error) {
+          console.error('Error fetching posts:', error);
+          throw error;
+        }
 
-      if (!data) return [];
+        if (!data || data.length === 0) {
+          console.log('No posts found');
+          return [];
+        }
 
-      // Fetch user profiles for each post
-      const postsWithProfiles = await Promise.all(
-        data.map(async (post) => {
-          const { data: profileData } = await supabase
-            .from('profiles')
-            .select('username, usertype, locality')
-            .eq('id', post.user_id)
-            .single();
-          
-          // Parse location if available
-          if (post.location) {
-            try {
-              // Assuming location is stored as "latitude,longitude"
-              const [lat, lng] = post.location.split(',').map(Number);
-              if (!isNaN(lat) && !isNaN(lng)) {
-                const distance = calculateDistance(
-                  userLocation.latitude, 
-                  userLocation.longitude,
-                  lat, 
-                  lng
-                );
-                return { 
-                  ...post, 
-                  profile: profileData, 
-                  distance: distance 
-                };
-              }
-            } catch (e) {
-              console.error('Error parsing location:', e);
+        console.log(`Found ${data.length} posts, processing...`);
+
+        // Fetch user profiles for each post
+        const postsWithProfiles = await Promise.all(
+          data.map(async (post) => {
+            const { data: profileData, error: profileError } = await supabase
+              .from('profiles')
+              .select('username, usertype, locality')
+              .eq('id', post.user_id)
+              .single();
+            
+            if (profileError) {
+              console.warn(`Error fetching profile for post ${post.id}:`, profileError);
             }
-          }
-          
-          return { ...post, profile: profileData, distance: null };
-        })
-      );
-      
-      // Filter posts within 15km radius (increased from 10km)
-      const nearbyPosts = postsWithProfiles.filter(post => {
-        return post.distance !== null && post.distance <= 15;
-      });
-      
-      // Sort by distance
-      nearbyPosts.sort((a, b) => {
-        if (a.distance === null) return 1;
-        if (b.distance === null) return -1;
-        return a.distance - b.distance;
-      });
-      
-      return nearbyPosts;
+            
+            // Parse location if available
+            let distance = null;
+            if (post.location) {
+              try {
+                // Assuming location is stored as "latitude,longitude"
+                const [lat, lng] = post.location.split(',').map(Number);
+                if (!isNaN(lat) && !isNaN(lng)) {
+                  distance = calculateDistance(
+                    userLocation.latitude, 
+                    userLocation.longitude,
+                    lat, 
+                    lng
+                  );
+                  console.log(`Post ${post.id} is ${distance}km away`);
+                }
+              } catch (e) {
+                console.error('Error parsing location for post:', post.id, e);
+              }
+            }
+            
+            return { 
+              ...post, 
+              profile: profileError ? null : profileData, 
+              distance 
+            };
+          })
+        );
+        
+        // Filter posts within 15km radius
+        const nearbyPosts = postsWithProfiles.filter(post => {
+          return post.distance !== null && post.distance <= 15;
+        });
+        
+        console.log(`Found ${nearbyPosts.length} posts within 15km`);
+        
+        // Sort by distance
+        nearbyPosts.sort((a, b) => {
+          if (a.distance === null) return 1;
+          if (b.distance === null) return -1;
+          return a.distance - b.distance;
+        });
+        
+        return nearbyPosts;
+      } catch (error) {
+        console.error('Error in queryFn:', error);
+        throw error;
+      }
     },
     enabled: !!userLocation,
     staleTime: 60000, // 1 minute cache
     refetchOnWindowFocus: false,
+    retry: 2,
   });
 
   const handleShare = (post: Post) => {
@@ -152,6 +178,11 @@ const VolunteerDashboard: React.FC = () => {
     }).format(date);
   };
 
+  // Retry location permissions if there was an error
+  const handleRetryLocation = () => {
+    requestPermission();
+  };
+
   // Check if user is a volunteer
   if (profile?.userType !== 'volunteer') {
     return (
@@ -165,6 +196,26 @@ const VolunteerDashboard: React.FC = () => {
     );
   }
 
+  // Show detailed error information if something went wrong
+  if (error) {
+    console.error('Error from useQuery:', error);
+    return (
+      <div className="space-y-6">
+        <h1 className="text-2xl font-bold">Nearby Posts (15km Radius)</h1>
+        <Card className="p-6 text-center">
+          <div className="flex flex-col items-center justify-center text-destructive">
+            <AlertTriangle size={48} className="mb-4" />
+            <p className="mb-4 font-medium">Error loading posts</p>
+            <p className="mb-6 text-sm text-muted-foreground">{error instanceof Error ? error.message : 'An unknown error occurred'}</p>
+            <Button onClick={() => refetch()}>
+              Try Again
+            </Button>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <AnimatedSection animation="fade-in" className="space-y-4">
@@ -172,10 +223,13 @@ const VolunteerDashboard: React.FC = () => {
         
         {locationError ? (
           <Card className="p-6 text-center">
-            <p className="mb-4">Please enable location access to see posts near you.</p>
-            <Button onClick={() => window.location.reload()}>
-              Retry Location Access
-            </Button>
+            <div className="flex flex-col items-center justify-center">
+              <AlertTriangle size={32} className="mb-4 text-amber-500" />
+              <p className="mb-4">Please enable location access to see posts near you.</p>
+              <Button onClick={handleRetryLocation}>
+                Retry Location Access
+              </Button>
+            </div>
           </Card>
         ) : isLoading || locationLoading ? (
           <div className="space-y-4">
@@ -249,7 +303,11 @@ const VolunteerDashboard: React.FC = () => {
           </div>
         ) : (
           <Card className="p-6 text-center">
-            <p className="mb-4">No posts found within 15km of your location.</p>
+            <p className="mb-4">
+              {userLocation 
+                ? "No posts found within 15km of your location." 
+                : "Waiting for your location to find nearby posts..."}
+            </p>
           </Card>
         )}
       </AnimatedSection>
