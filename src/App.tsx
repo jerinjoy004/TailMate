@@ -5,6 +5,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { useEffect } from "react";
+import { initializeStorage } from "@/integrations/supabase/client";
 import Index from "./pages/Index";
 import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
@@ -37,6 +39,48 @@ const ProtectedVolunteerRoute = ({ children }: { children: React.ReactNode }) =>
   return <>{children}</>;
 };
 
+const AppContent = () => {
+  useEffect(() => {
+    // Initialize storage when the app loads
+    initializeStorage();
+  }, []);
+
+  return (
+    <Routes>
+      <Route path="/" element={<Index />} />
+      <Route path="/signin" element={<SignIn />} />
+      <Route path="/signup" element={<SignUp />} />
+      
+      {/* Dashboard routes */}
+      <Route path="/dashboard" element={<DashboardLayout />}>
+        <Route index element={<Dashboard />} />
+        <Route path="notifications" element={<Notifications />} />
+        <Route path="profile" element={<Profile />} />
+        <Route path="create-post" element={
+          <ProtectedUserRoute>
+            <CreatePost />
+          </ProtectedUserRoute>
+        } />
+        <Route path="comments/:postId" element={<Comments />} />
+        <Route path="donations" element={<Donations />} />
+        <Route path="create-donation" element={
+          <ProtectedVolunteerRoute>
+            <CreateDonation />
+          </ProtectedVolunteerRoute>
+        } />
+        <Route path="donate/:donationId" element={<DonateForm />} />
+        
+        {/* Volunteer routes */}
+        <Route path="volunteer" element={<VolunteerDashboard />} />
+        <Route path="doctors" element={<DoctorAvailability />} />
+      </Route>
+      
+      {/* Catch-all route */}
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  );
+};
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -46,38 +90,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/signin" element={<SignIn />} />
-            <Route path="/signup" element={<SignUp />} />
-            
-            {/* Dashboard routes */}
-            <Route path="/dashboard" element={<DashboardLayout />}>
-              <Route index element={<Dashboard />} />
-              <Route path="notifications" element={<Notifications />} />
-              <Route path="profile" element={<Profile />} />
-              <Route path="create-post" element={
-                <ProtectedUserRoute>
-                  <CreatePost />
-                </ProtectedUserRoute>
-              } />
-              <Route path="comments/:postId" element={<Comments />} />
-              <Route path="donations" element={<Donations />} />
-              <Route path="create-donation" element={
-                <ProtectedVolunteerRoute>
-                  <CreateDonation />
-                </ProtectedVolunteerRoute>
-              } />
-              <Route path="donate/:donationId" element={<DonateForm />} />
-              
-              {/* Volunteer routes */}
-              <Route path="volunteer" element={<VolunteerDashboard />} />
-              <Route path="doctors" element={<DoctorAvailability />} />
-            </Route>
-            
-            {/* Catch-all route */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+          <AppContent />
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
