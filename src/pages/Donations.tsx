@@ -1,13 +1,14 @@
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Card } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { Coins, PlusCircle } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import AnimatedSection from '@/components/ui-components/AnimatedSection';
 import { useAuth } from '@/contexts/AuthContext';
 import Button from '@/components/ui-components/Button';
+import { useQuery } from '@tanstack/react-query';
 
 interface DonationRequest {
   id: string;
@@ -22,47 +23,45 @@ interface DonationRequest {
   };
 }
 
+const fetchDonationRequests = async () => {
+  const { data, error } = await supabase
+    .from('donation_requests')
+    .select('*')
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+
+  if (data) {
+    // Fetch user profiles for each donation request
+    const requestsWithProfiles = await Promise.all(
+      data.map(async (request) => {
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('username')
+          .eq('id', request.user_id)
+          .single();
+        
+        return { ...request, profile: profileData };
+      })
+    );
+    
+    return requestsWithProfiles;
+  }
+  
+  return [];
+};
+
 const Donations: React.FC = () => {
-  const [donationRequests, setDonationRequests] = useState<DonationRequest[]>([]);
-  const [loading, setLoading] = useState(true);
   const { user, profile } = useAuth();
   const navigate = useNavigate();
-
-  useEffect(() => {
-    const fetchDonationRequests = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('donation_requests')
-          .select('*')
-          .order('created_at', { ascending: false });
-
-        if (error) throw error;
-
-        if (data) {
-          // Fetch user profiles for each donation request
-          const requestsWithProfiles = await Promise.all(
-            data.map(async (request) => {
-              const { data: profileData } = await supabase
-                .from('profiles')
-                .select('username')
-                .eq('id', request.user_id)
-                .single();
-              
-              return { ...request, profile: profileData };
-            })
-          );
-          
-          setDonationRequests(requestsWithProfiles);
-        }
-      } catch (error: any) {
-        console.error('Error fetching donation requests:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchDonationRequests();
-  }, []);
+  
+  // Use React Query for data fetching
+  const { data: donationRequests = [], isLoading } = useQuery({
+    queryKey: ['donation-requests'],
+    queryFn: fetchDonationRequests,
+    staleTime: 60000, // 1 minute
+    refetchOnWindowFocus: false,
+  });
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -93,7 +92,7 @@ const Donations: React.FC = () => {
       </div>
       
       <AnimatedSection animation="fade-in" className="space-y-4">
-        {loading ? (
+        {isLoading ? (
           <div className="space-y-4">
             {[1, 2, 3].map((i) => (
               <Card key={i} className="p-6 animate-pulse">

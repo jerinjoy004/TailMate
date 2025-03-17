@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -34,6 +34,39 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  // Optimized function to fetch user profile
+  const fetchUserProfile = useCallback(async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+      
+      if (error) {
+        console.error('Error fetching user profile:', error);
+        return null;
+      }
+      
+      if (data) {
+        // Map database fields to our UserProfile interface
+        return {
+          id: data.id,
+          username: data.username,
+          userType: data.usertype as 'normal' | 'volunteer' | 'doctor',
+          locality: data.locality,
+          licenseNumber: data.licensenumber,
+          isVerified: data.isverified
+        };
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Error in profile fetch:', error);
+      return null;
+    }
+  }, []);
+
   useEffect(() => {
     // Check for authenticated user on initial load
     const checkUser = async () => {
@@ -41,25 +74,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const { data: { session } } = await supabase.auth.getSession();
         if (session) {
           setUser(session.user);
-          // Fetch user profile data
-          const { data, error } = await supabase
-            .from('profiles')
-            .select('*')
-            .eq('id', session.user.id)
-            .single();
-          
-          if (error) {
-            console.error('Error fetching user profile:', error);
-          } else if (data) {
-            // Map database fields to our UserProfile interface
-            setProfile({
-              id: data.id,
-              username: data.username,
-              userType: data.usertype as 'normal' | 'volunteer' | 'doctor',
-              locality: data.locality,
-              licenseNumber: data.licensenumber,
-              isVerified: data.isverified
-            });
+          const profileData = await fetchUserProfile(session.user.id);
+          if (profileData) {
+            setProfile(profileData);
           }
         }
       } catch (error) {
@@ -75,26 +92,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN' && session) {
         setUser(session.user);
-        
-        // Fetch user profile on sign in
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', session.user.id)
-          .single();
-        
-        if (error) {
-          console.error('Error fetching user profile:', error);
-        } else if (data) {
-          // Map database fields to our UserProfile interface
-          setProfile({
-            id: data.id,
-            username: data.username,
-            userType: data.usertype as 'normal' | 'volunteer' | 'doctor',
-            locality: data.locality,
-            licenseNumber: data.licensenumber,
-            isVerified: data.isverified
-          });
+        const profileData = await fetchUserProfile(session.user.id);
+        if (profileData) {
+          setProfile(profileData);
         }
       } else if (event === 'SIGNED_OUT') {
         setUser(null);
@@ -105,7 +105,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => {
       authListener.subscription.unsubscribe();
     };
-  }, []);
+  }, [fetchUserProfile]);
 
   const signIn = async (email: string, password: string) => {
     try {

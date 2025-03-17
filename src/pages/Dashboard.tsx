@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card } from '@/components/ui/card';
@@ -9,6 +9,7 @@ import { Share, MessageCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import AnimatedSection from '@/components/ui-components/AnimatedSection';
 import { useToast } from '@/hooks/use-toast';
+import { useQuery } from '@tanstack/react-query';
 
 // Define Post interface with user profile data
 interface Post {
@@ -25,51 +26,49 @@ interface Post {
   };
 }
 
+const fetchPosts = async () => {
+  const { data, error } = await supabase
+    .from('posts')
+    .select(`
+      *,
+      comments:comments(count)
+    `)
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+
+  if (data) {
+    // Fetch user profiles for each post
+    const postsWithProfiles = await Promise.all(
+      data.map(async (post) => {
+        const { data: profileData } = await supabase
+          .from('profiles')
+          .select('username, usertype')
+          .eq('id', post.user_id)
+          .single();
+        
+        return { ...post, profile: profileData };
+      })
+    );
+    
+    return postsWithProfiles;
+  }
+  
+  return [];
+};
+
 const Dashboard: React.FC = () => {
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [loading, setLoading] = useState(true);
   const { user, profile } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-
-  useEffect(() => {
-    const fetchPosts = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('posts')
-          .select(`
-            *,
-            comments:comments(count)
-          `)
-          .order('created_at', { ascending: false });
-
-        if (error) throw error;
-
-        if (data) {
-          // Fetch user profiles for each post
-          const postsWithProfiles = await Promise.all(
-            data.map(async (post) => {
-              const { data: profileData } = await supabase
-                .from('profiles')
-                .select('username, usertype')
-                .eq('id', post.user_id)
-                .single();
-              
-              return { ...post, profile: profileData };
-            })
-          );
-          
-          setPosts(postsWithProfiles);
-        }
-      } catch (error: any) {
-        console.error('Error fetching posts:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchPosts();
-  }, []);
+  
+  // Use React Query for data fetching with caching
+  const { data: posts = [], isLoading } = useQuery({
+    queryKey: ['posts'],
+    queryFn: fetchPosts,
+    staleTime: 60000, // 1 minute
+    refetchOnWindowFocus: false,
+  });
 
   const handleShare = (post: Post) => {
     if (navigator.share) {
@@ -104,7 +103,7 @@ const Dashboard: React.FC = () => {
       <AnimatedSection animation="fade-in" className="space-y-4">
         <h1 className="text-2xl font-bold">Your Feed</h1>
         
-        {loading ? (
+        {isLoading ? (
           <div className="space-y-4">
             {[1, 2, 3].map((i) => (
               <Card key={i} className="p-6 animate-pulse">
@@ -141,6 +140,7 @@ const Dashboard: React.FC = () => {
                       src={post.image_url} 
                       alt="Post" 
                       className="absolute inset-0 w-full h-full object-cover"
+                      loading="lazy" // Add lazy loading for images
                     />
                   </div>
                 )}

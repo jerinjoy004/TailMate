@@ -1,10 +1,11 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Bell } from 'lucide-react';
 import AnimatedSection from '@/components/ui-components/AnimatedSection';
 import { useToast } from '@/hooks/use-toast';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 interface Notification {
   id: string;
@@ -15,87 +16,90 @@ interface Notification {
 }
 
 const Notifications: React.FC = () => {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [loading, setLoading] = useState(true);
   const { user } = useAuth();
   const { toast } = useToast();
-
-  useEffect(() => {
-    const fetchNotifications = async () => {
-      if (!user) return;
+  const queryClient = useQueryClient();
+  
+  // Fetch notifications with React Query
+  const { data: notifications = [], isLoading } = useQuery({
+    queryKey: ['notifications', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
       
-      try {
-        const { data, error } = await supabase
-          .from('notifications')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
-        
-        if (error) throw error;
-        
-        setNotifications(data as Notification[]);
-      } catch (error: any) {
-        toast({
-          title: "Error",
-          description: error.message || "Failed to load notifications",
-          variant: "destructive",
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
+      const { data, error } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return data as Notification[];
+    },
+    enabled: !!user,
+    staleTime: 30000, // 30 seconds
+  });
 
-    fetchNotifications();
-    
-    // Set up realtime subscription for new notifications
-    if (user) {
-      const notificationsSubscription = supabase
-        .channel('public:notifications')
-        .on('postgres_changes', 
-          { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` }, 
-          (payload) => {
-            // Add the new notification to the list
-            setNotifications(prev => [payload.new as Notification, ...prev]);
-            
-            // Show a toast for the new notification
-            toast({
-              title: "New Notification",
-              description: (payload.new as Notification).message,
-            });
-          }
-        )
-        .subscribe();
-
-      return () => {
-        supabase.removeChannel(notificationsSubscription);
-      };
-    }
-  }, [user]);
-
-  const markAsRead = async (id: string) => {
-    try {
+  // Mark notification as read mutation
+  const markAsReadMutation = useMutation({
+    mutationFn: async (id: string) => {
       const { error } = await supabase
         .from('notifications')
         .update({ is_read: true })
         .eq('id', id);
       
       if (error) throw error;
-      
-      setNotifications(prev => 
-        prev.map(notification => 
+      return id;
+    },
+    onSuccess: (id) => {
+      // Update the cache with the new notification state
+      queryClient.setQueryData(['notifications', user?.id], (oldData: Notification[] | undefined) => 
+        oldData ? oldData.map(notification => 
           notification.id === id ? {...notification, is_read: true} : notification
-        )
+        ) : []
       );
-    } catch (error: any) {
+    },
+    onError: (error: any) => {
       toast({
         title: "Error",
         description: error.message || "Failed to update notification",
         variant: "destructive",
       });
     }
+  });
+
+  // Set up realtime subscription for new notifications
+  useEffect(() => {
+    if (!user) return;
+    
+    const notificationsSubscription = supabase
+      .channel('public:notifications')
+      .on('postgres_changes', 
+        { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` }, 
+        (payload) => {
+          // Add the new notification to the cache
+          queryClient.setQueryData(['notifications', user.id], 
+            (old: Notification[] | undefined) => [payload.new as Notification, ...(old || [])]
+          );
+          
+          // Show a toast for the new notification
+          toast({
+            title: "New Notification",
+            description: (payload.new as Notification).message,
+          });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(notificationsSubscription);
+    };
+  }, [user, queryClient, toast]);
+
+  const markAsRead = (id: string) => {
+    markAsReadMutation.mutate(id);
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
