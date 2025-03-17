@@ -45,6 +45,12 @@ const DashboardLayout: React.FC = () => {
   };
 
   const navItems = getNavItems();
+  
+  // Check if we're on the main dashboard page (not subpages)
+  const isMainDashboard = location.pathname === '/dashboard';
+  
+  // Also check if user is not a volunteer (only normal users can create posts)
+  const canCreatePost = profile?.userType !== 'volunteer';
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
@@ -100,13 +106,15 @@ const DashboardLayout: React.FC = () => {
         </div>
       </div>
 
-      {/* Floating action button for creating posts */}
-      <Link
-        to="/dashboard/create-post"
-        className="fixed bottom-20 right-4 sm:bottom-6 sm:right-6 bg-primary text-primary-foreground p-3 rounded-full shadow-lg hover:opacity-90 transition-opacity"
-      >
-        <Plus className="h-6 w-6" />
-      </Link>
+      {/* Floating action button for creating posts - only show on main dashboard for normal users */}
+      {isMainDashboard && canCreatePost && (
+        <Link
+          to="/dashboard/create-post"
+          className="fixed bottom-20 right-4 sm:bottom-6 sm:right-6 bg-primary text-primary-foreground p-3 rounded-full shadow-lg hover:opacity-90 transition-opacity"
+        >
+          <Plus className="h-6 w-6" />
+        </Link>
+      )}
     </div>
   );
 };

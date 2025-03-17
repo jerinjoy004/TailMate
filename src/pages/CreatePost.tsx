@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Image as ImageIcon, MapPin, X } from 'lucide-react';
 import Button from '@/components/ui-components/Button';
 import { useAuth } from '@/contexts/AuthContext';
-import { supabase, getStorageUrl } from '@/integrations/supabase/client';
+import { supabase, getStorageUrl, initializeStorage } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -22,19 +22,28 @@ const CreatePost: React.FC = () => {
   const { toast } = useToast();
 
   useEffect(() => {
+    // Initialize storage bucket on component mount
+    initializeStorage();
+    
     // Check if geolocation is available
     if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setUserLocation({
-            latitude: position.coords.latitude,
-            longitude: position.coords.longitude
-          });
-        },
-        (error) => {
-          console.error('Error getting location:', error);
+      navigator.permissions.query({ name: 'geolocation' }).then(result => {
+        if (result.state === 'granted') {
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              setUserLocation({
+                latitude: position.coords.latitude,
+                longitude: position.coords.longitude
+              });
+            },
+            (error) => {
+              console.error('Error getting location:', error);
+            }
+          );
+        } else {
+          console.log('Geolocation permission not granted');
         }
-      );
+      });
     }
   }, []);
 
@@ -94,24 +103,6 @@ const CreatePost: React.FC = () => {
         const fileExt = image.name.split('.').pop();
         const fileName = `${uuidv4()}.${fileExt}`;
         const filePath = `${user.id}/${fileName}`;
-        
-        // Check if posts bucket exists, create if it doesn't
-        const { data: bucketExists, error: bucketCheckError } = await supabase
-          .storage
-          .getBucket('posts');
-          
-        if (bucketCheckError && bucketCheckError.message.includes('not found')) {
-          // Bucket doesn't exist, create it
-          const { error: createBucketError } = await supabase
-            .storage
-            .createBucket('posts', {
-              public: true
-            });
-            
-          if (createBucketError) {
-            throw createBucketError;
-          }
-        }
         
         // Upload the file
         const { error: uploadError } = await supabase

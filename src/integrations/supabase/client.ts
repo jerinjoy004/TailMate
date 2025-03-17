@@ -13,6 +13,33 @@ export const getStorageUrl = (bucketName: string, filePath: string) => {
   return `${SUPABASE_URL}/storage/v1/object/public/${bucketName}/${filePath}`;
 };
 
+// Initialize storage bucket if needed
+export const initializeStorage = async () => {
+  try {
+    // Check if posts bucket exists
+    const { data: bucketExists, error: bucketCheckError } = await supabase
+      .storage
+      .getBucket('posts');
+      
+    if (bucketCheckError && bucketCheckError.message.includes('not found')) {
+      // Bucket doesn't exist, create it
+      const { error: createBucketError } = await supabase
+        .storage
+        .createBucket('posts', {
+          public: true
+        });
+        
+      if (createBucketError) {
+        console.error('Error creating bucket:', createBucketError);
+      } else {
+        console.log('Posts bucket created successfully');
+      }
+    }
+  } catch (error) {
+    console.error('Error initializing storage:', error);
+  }
+};
+
 // Add manual type definition for donation_requests table
 // This is needed until the types file is regenerated
 declare module '@supabase/supabase-js' {

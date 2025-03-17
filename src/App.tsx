@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import Index from "./pages/Index";
 import SignIn from "./pages/SignIn";
@@ -20,6 +20,22 @@ import CreateDonation from "./pages/CreateDonation";
 import DonateForm from "./pages/DonateForm";
 import VolunteerDashboard from "./pages/VolunteerDashboard";
 import DoctorAvailability from "./pages/DoctorAvailability";
+import { useAuth } from "@/contexts/AuthContext";
+
+// Protected route component
+const ProtectedUserRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user, profile } = useAuth();
+  if (!user) return <Navigate to="/signin" />;
+  if (profile?.userType === 'volunteer') return <Navigate to="/dashboard" />;
+  return <>{children}</>;
+};
+
+const ProtectedVolunteerRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user, profile } = useAuth();
+  if (!user) return <Navigate to="/signin" />;
+  if (profile?.userType !== 'volunteer') return <Navigate to="/dashboard" />;
+  return <>{children}</>;
+};
 
 const queryClient = new QueryClient();
 
@@ -40,10 +56,18 @@ const App = () => (
               <Route index element={<Dashboard />} />
               <Route path="notifications" element={<Notifications />} />
               <Route path="profile" element={<Profile />} />
-              <Route path="create-post" element={<CreatePost />} />
+              <Route path="create-post" element={
+                <ProtectedUserRoute>
+                  <CreatePost />
+                </ProtectedUserRoute>
+              } />
               <Route path="comments/:postId" element={<Comments />} />
               <Route path="donations" element={<Donations />} />
-              <Route path="create-donation" element={<CreateDonation />} />
+              <Route path="create-donation" element={
+                <ProtectedVolunteerRoute>
+                  <CreateDonation />
+                </ProtectedVolunteerRoute>
+              } />
               <Route path="donate/:donationId" element={<DonateForm />} />
               
               {/* Volunteer routes */}
