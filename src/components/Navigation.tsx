@@ -3,9 +3,13 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import Button from './ui-components/Button';
+import { Menu } from 'lucide-react';
+import { Sheet, SheetContent, SheetTrigger } from './ui/sheet';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const Navigation: React.FC = () => {
   const [scrolled, setScrolled] = useState(false);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -23,6 +27,58 @@ const Navigation: React.FC = () => {
     };
   }, []);
 
+  const navLinks = [
+    { href: "#features", label: "Features" },
+    { href: "#how-it-works", label: "How It Works" },
+  ];
+
+  const MobileMenu = () => (
+    <Sheet>
+      <SheetTrigger asChild>
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="md:hidden"
+        >
+          <Menu className="h-5 w-5" />
+          <span className="sr-only">Toggle menu</span>
+        </Button>
+      </SheetTrigger>
+      <SheetContent side="right" className="w-[250px] pt-10">
+        <nav className="flex flex-col space-y-4">
+          {navLinks.map((link) => (
+            <a
+              key={link.href}
+              href={link.href}
+              className="text-sm font-medium text-foreground hover:text-primary transition-colors py-2"
+            >
+              {link.label}
+            </a>
+          ))}
+          <div className="flex flex-col space-y-2 mt-4 pt-4 border-t">
+            <Link to="/signin" className="w-full">
+              <Button 
+                variant="outline" 
+                size="default"
+                className="w-full"
+              >
+                Sign In
+              </Button>
+            </Link>
+            <Link to="/signup" className="w-full">
+              <Button 
+                size="default"
+                className="w-full"
+              >
+                Get Started
+              </Button>
+            </Link>
+          </div>
+        </nav>
+      </SheetContent>
+    </Sheet>
+  );
+
   return (
     <header
       className={cn(
@@ -38,41 +94,32 @@ const Navigation: React.FC = () => {
         </div>
         
         <nav className="hidden md:flex items-center space-x-8">
-          <a 
-            href="#features" 
-            className="text-sm font-medium text-foreground hover:text-primary transition-colors"
-          >
-            Features
-          </a>
-          <a 
-            href="#how-it-works" 
-            className="text-sm font-medium text-foreground hover:text-primary transition-colors"
-          >
-            How It Works
-          </a>
-          <a 
-            href="#user-roles" 
-            className="text-sm font-medium text-foreground hover:text-primary transition-colors"
-          >
-            User Roles
-          </a>
+          {navLinks.map((link) => (
+            <a 
+              key={link.href}
+              href={link.href} 
+              className="text-sm font-medium text-foreground hover:text-primary transition-colors"
+            >
+              {link.label}
+            </a>
+          ))}
         </nav>
         
         <div className="flex items-center space-x-4">
-          <Link to="/signin">
+          <Link to="/signin" className="hidden md:block">
             <Button 
               variant="outline" 
               size="sm"
-              className="hidden md:flex"
             >
               Sign In
             </Button>
           </Link>
-          <Link to="/signup">
+          <Link to="/signup" className="hidden md:block">
             <Button size="sm">
               Get Started
             </Button>
           </Link>
+          <MobileMenu />
         </div>
       </div>
     </header>

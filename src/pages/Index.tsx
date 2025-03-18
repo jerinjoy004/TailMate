@@ -4,7 +4,6 @@ import Navigation from '@/components/Navigation';
 import Hero from '@/components/Hero';
 import Features from '@/components/Features';
 import HowItWorks from '@/components/HowItWorks';
-import UserRoles from '@/components/UserRoles';
 import Footer from '@/components/Footer';
 
 const Index: React.FC = () => {
@@ -19,7 +18,6 @@ const Index: React.FC = () => {
         <Hero />
         <Features />
         <HowItWorks />
-        <UserRoles />
       </main>
       <Footer />
     </div>
