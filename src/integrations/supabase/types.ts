@@ -41,6 +41,30 @@ export type Database = {
           },
         ]
       }
+      doctor_status: {
+        Row: {
+          created_at: string | null
+          doctor_id: string
+          id: string
+          is_online: boolean
+          phone_number: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          doctor_id: string
+          id?: string
+          is_online?: boolean
+          phone_number?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          doctor_id?: string
+          id?: string
+          is_online?: boolean
+          phone_number?: string | null
+        }
+        Relationships: []
+      }
       donation_requests: {
         Row: {
           amount: number
@@ -129,6 +153,7 @@ export type Database = {
           isverified: boolean | null
           licensenumber: string | null
           locality: string | null
+          phone: string | null
           updated_at: string | null
           username: string | null
           usertype: string
@@ -139,6 +164,7 @@ export type Database = {
           isverified?: boolean | null
           licensenumber?: string | null
           locality?: string | null
+          phone?: string | null
           updated_at?: string | null
           username?: string | null
           usertype?: string
@@ -149,6 +175,7 @@ export type Database = {
           isverified?: boolean | null
           licensenumber?: string | null
           locality?: string | null
+          phone?: string | null
           updated_at?: string | null
           username?: string | null
           usertype?: string

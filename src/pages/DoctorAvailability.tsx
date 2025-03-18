@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -61,6 +62,7 @@ const DoctorAvailability: React.FC = () => {
     queryKey: ['doctors', locationKey, selectedDate, selectedTimeSlot],
     queryFn: async () => {
       try {
+        // Join profiles and doctor_status tables to get all doctor info
         const { data: doctorProfiles, error: profilesError } = await supabase
           .from('profiles')
           .select('*')
@@ -110,7 +112,7 @@ const DoctorAvailability: React.FC = () => {
             licenseNumber: doctor.licensenumber,
             isVerified: doctor.isverified,
             email: `${doctor.username?.toLowerCase().replace(/\s+/g, '.')}@example.com`,
-            phone: status?.phone_number,
+            phone: status?.phone_number || doctor.phone,
             available: status?.is_online || false,
             distance: distance
           };

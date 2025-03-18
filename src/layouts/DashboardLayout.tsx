@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link, Outlet, useLocation, Navigate } from 'react-router-dom';
 import { Home, Bell, User, LogOut, Plus, Users, Calendar, Coins, Circle } from 'lucide-react';

@@ -8,11 +8,14 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { Input } from '@/components/ui/input';
 
 const Profile: React.FC = () => {
   const { user, profile } = useAuth();
   const [isOnline, setIsOnline] = useState(false);
   const [phoneNumber, setPhoneNumber] = useState<string | null>(null);
+  const [isEditingPhone, setIsEditingPhone] = useState(false);
+  const [newPhoneNumber, setNewPhoneNumber] = useState('');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -28,6 +31,7 @@ const Profile: React.FC = () => {
           if (data) {
             setIsOnline(data.is_online || false);
             setPhoneNumber(data.phone_number);
+            setNewPhoneNumber(data.phone_number || '');
           } else if (profile?.userType === 'doctor') {
             // Create initial status record for doctors
             const { error: insertError } = await supabase
@@ -35,7 +39,7 @@ const Profile: React.FC = () => {
               .insert({
                 doctor_id: user.id,
                 is_online: false,
-                phone_number: null
+                phone_number: profile?.phone || null
               });
               
             if (insertError) console.error('Error creating doctor status:', insertError);
@@ -81,21 +85,33 @@ const Profile: React.FC = () => {
     }
   };
 
-  const updatePhoneNumber = async (number: string) => {
-    if (!user || profile?.userType !== 'doctor') return;
+  const updatePhoneNumber = async () => {
+    if (!user || !newPhoneNumber) return;
     
     try {
-      const { error } = await supabase
-        .from('doctor_status')
-        .upsert({
-          doctor_id: user.id,
-          is_online: isOnline,
-          phone_number: number
-        });
-        
-      if (error) throw error;
+      if (profile?.userType === 'doctor') {
+        const { error } = await supabase
+          .from('doctor_status')
+          .upsert({
+            doctor_id: user.id,
+            is_online: isOnline,
+            phone_number: newPhoneNumber
+          });
+          
+        if (error) throw error;
+      }
       
-      setPhoneNumber(number);
+      // Also update in the profiles table
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({ phone: newPhoneNumber })
+        .eq('id', user.id);
+        
+      if (profileError) throw profileError;
+      
+      setPhoneNumber(newPhoneNumber);
+      setIsEditingPhone(false);
+      
       toast({
         title: "Contact details updated",
         description: "Your phone number has been updated successfully",
@@ -143,10 +159,35 @@ const Profile: React.FC = () => {
             <span>{user.email}</span>
           </div>
           
-          {phoneNumber && (
+          {isEditingPhone ? (
+            <div className="flex flex-col sm:flex-row items-center gap-2 mt-2">
+              <Input
+                type="tel"
+                value={newPhoneNumber}
+                onChange={(e) => setNewPhoneNumber(e.target.value)}
+                placeholder="Enter phone number"
+                className="max-w-[200px]"
+              />
+              <div className="flex gap-2">
+                <Button size="sm" onClick={updatePhoneNumber}>Save</Button>
+                <Button size="sm" variant="outline" onClick={() => {
+                  setIsEditingPhone(false);
+                  setNewPhoneNumber(phoneNumber || '');
+                }}>Cancel</Button>
+              </div>
+            </div>
+          ) : (
             <div className="flex items-center text-sm text-muted-foreground my-1">
               <Phone className="w-4 h-4 mr-1" />
-              <span>{phoneNumber}</span>
+              <span>{phoneNumber || profile?.phone || 'Not provided'}</span>
+              <Button 
+                size="sm" 
+                variant="ghost" 
+                className="ml-2 h-6 px-2"
+                onClick={() => setIsEditingPhone(true)}
+              >
+                Edit
+              </Button>
             </div>
           )}
           
@@ -179,10 +220,6 @@ const Profile: React.FC = () => {
               </div>
             </div>
           )}
-          
-          <Button className="mt-6" variant="outline">
-            Edit Profile
-          </Button>
         </div>
         
         <div className="grid grid-cols-2 gap-4">

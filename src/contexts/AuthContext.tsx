@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
@@ -35,7 +34,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Optimized function to fetch user profile
   const fetchUserProfile = useCallback(async (userId: string) => {
     try {
       const { data, error } = await supabase
@@ -50,7 +48,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       
       if (data) {
-        // Map database fields to our UserProfile interface
         return {
           id: data.id,
           username: data.username,
@@ -70,7 +67,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   useEffect(() => {
-    // Check for authenticated user on initial load
     const checkUser = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
@@ -90,7 +86,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     checkUser();
 
-    // Set up auth state listener
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN' && session) {
         setUser(session.user);
@@ -127,7 +122,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           description: "You've successfully signed in.",
         });
         
-        // Redirect to the appropriate dashboard based on user type
         const profileData = await fetchUserProfile(data.user.id);
         if (profileData?.userType === 'volunteer') {
           navigate('/dashboard/volunteer');
@@ -150,7 +144,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       setLoading(true);
       
-      // Sign up with auth
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
@@ -167,7 +160,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (error) throw error;
 
       if (data?.user) {
-        // Also update the profile with additional info
         const { error: profileError } = await supabase
           .from('profiles')
           .upsert({
@@ -183,7 +175,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           console.error('Error updating profile:', profileError);
         }
           
-        // For doctors, also create initial status record
         if (userData.userType === 'doctor') {
           const { error: statusError } = await supabase
             .from('doctor_status')
@@ -235,7 +226,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [navigate, toast]);
 
-  // Memoize the context value to prevent unnecessary re-renders
   const contextValue = useMemo(() => ({
     user,
     profile,
