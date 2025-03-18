@@ -1,238 +1,179 @@
 
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
-import { UserCircle, MapPin, Award, Mail, Calendar, Phone, Circle } from 'lucide-react';
-import AnimatedSection from '@/components/ui-components/AnimatedSection';
-import Button from '@/components/ui-components/Button';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Separator } from '@/components/ui/separator';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
+import AnimatedSection from '@/components/ui-components/AnimatedSection';
+import { Loader2 } from 'lucide-react';
+import DoctorStatusToggle from '@/components/profile/DoctorStatusToggle';
+import ProfileContactForm from '@/components/profile/ProfileContactForm';
 
-const Profile: React.FC = () => {
-  const { user, profile } = useAuth();
-  const [isOnline, setIsOnline] = useState(false);
-  const [phoneNumber, setPhoneNumber] = useState<string | null>(null);
-  const [isEditingPhone, setIsEditingPhone] = useState(false);
-  const [newPhoneNumber, setNewPhoneNumber] = useState('');
+const Profile = () => {
+  const { user, profile, updateProfile } = useAuth();
   const { toast } = useToast();
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [username, setUsername] = useState(profile?.username || '');
+  const [isOnline, setIsOnline] = useState(false);
 
   useEffect(() => {
-    const fetchAdditionalProfileData = async () => {
-      if (user) {
+    // Set username when profile is loaded
+    if (profile?.username) {
+      setUsername(profile.username);
+    }
+
+    // If user is a doctor, fetch their online status
+    const fetchDoctorStatus = async () => {
+      if (user && profile?.userType === 'doctor') {
         try {
           const { data, error } = await supabase
             .from('doctor_status')
-            .select('is_online, phone_number')
+            .select('is_online')
             .eq('doctor_id', user.id)
             .single();
-            
-          if (data) {
-            setIsOnline(data.is_online || false);
-            setPhoneNumber(data.phone_number);
-            setNewPhoneNumber(data.phone_number || '');
-          } else if (profile?.userType === 'doctor') {
-            // Create initial status record for doctors
-            const { error: insertError } = await supabase
-              .from('doctor_status')
-              .insert({
-                doctor_id: user.id,
-                is_online: false,
-                phone_number: profile?.phone || null
-              });
-              
-            if (insertError) console.error('Error creating doctor status:', insertError);
+
+          if (!error && data) {
+            setIsOnline(data.is_online);
           }
         } catch (error) {
           console.error('Error fetching doctor status:', error);
         }
       }
     };
-    
-    fetchAdditionalProfileData();
+
+    fetchDoctorStatus();
   }, [user, profile]);
 
-  const toggleOnlineStatus = async () => {
-    if (!user || profile?.userType !== 'doctor') return;
-    
-    try {
-      const newStatus = !isOnline;
-      const { error } = await supabase
-        .from('doctor_status')
-        .upsert({
-          doctor_id: user.id,
-          is_online: newStatus,
-          phone_number: phoneNumber
-        });
-        
-      if (error) throw error;
-      
-      setIsOnline(newStatus);
+  const handleUpdateProfile = async () => {
+    if (!username.trim()) {
       toast({
-        title: newStatus ? "You are now online" : "You are now offline",
-        description: newStatus 
-          ? "Volunteers can now see your availability" 
-          : "Your availability is hidden from volunteers",
+        title: "Username required",
+        description: "Please enter a valid username",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    setIsUpdating(true);
+    try {
+      // Call updateProfile from the AuthContext
+      await updateProfile({ username });
+      
+      toast({
+        title: "Profile updated",
+        description: "Your profile has been updated successfully",
       });
     } catch (error) {
-      console.error('Error updating online status:', error);
+      console.error('Error updating profile:', error);
       toast({
-        title: "Failed to update status",
+        title: "Error updating profile",
         description: "Please try again later",
-        variant: "destructive"
+        variant: "destructive",
       });
+    } finally {
+      setIsUpdating(false);
     }
   };
 
-  const updatePhoneNumber = async () => {
-    if (!user || !newPhoneNumber) return;
-    
-    try {
-      if (profile?.userType === 'doctor') {
-        const { error } = await supabase
-          .from('doctor_status')
-          .upsert({
-            doctor_id: user.id,
-            is_online: isOnline,
-            phone_number: newPhoneNumber
-          });
-          
-        if (error) throw error;
-      }
-      
-      // Also update in the profiles table
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({ phone: newPhoneNumber })
-        .eq('id', user.id);
-        
-      if (profileError) throw profileError;
-      
-      setPhoneNumber(newPhoneNumber);
-      setIsEditingPhone(false);
-      
-      toast({
-        title: "Contact details updated",
-        description: "Your phone number has been updated successfully",
-      });
-    } catch (error) {
-      console.error('Error updating phone number:', error);
-      toast({
-        title: "Failed to update contact details",
-        description: "Please try again later",
-        variant: "destructive"
-      });
-    }
+  const handleStatusChange = (status: boolean) => {
+    setIsOnline(status);
   };
-
-  if (!user) {
-    return null;
-  }
 
   return (
-    <div className="space-y-6 pb-20 sm:pb-0">
-      <h1 className="text-2xl font-bold">My Profile</h1>
+    <div className="space-y-6">
+      <h1 className="text-2xl font-bold">Your Profile</h1>
       
-      <AnimatedSection animation="scale-in" className="space-y-6">
-        <div className="flex flex-col items-center p-6 bg-card border border-border rounded-lg text-center">
-          <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center mb-4">
-            <UserCircle className="w-16 h-16 text-primary" />
-          </div>
-          
-          <h2 className="text-xl font-bold">{profile?.username || user.email?.split('@')[0] || 'User'}</h2>
-          
-          <div className="flex items-center text-sm text-muted-foreground my-1">
-            <Award className="w-4 h-4 mr-1" />
-            <span className="capitalize">{profile?.userType || 'Normal User'}</span>
-          </div>
-          
-          {profile?.locality && (
-            <div className="flex items-center text-sm text-muted-foreground my-1">
-              <MapPin className="w-4 h-4 mr-1" />
-              <span>{profile.locality}</span>
-            </div>
-          )}
-          
-          <div className="flex items-center text-sm text-muted-foreground my-1">
-            <Mail className="w-4 h-4 mr-1" />
-            <span>{user.email}</span>
-          </div>
-          
-          {isEditingPhone ? (
-            <div className="flex flex-col sm:flex-row items-center gap-2 mt-2">
-              <Input
-                type="tel"
-                value={newPhoneNumber}
-                onChange={(e) => setNewPhoneNumber(e.target.value)}
-                placeholder="Enter phone number"
-                className="max-w-[200px]"
-              />
-              <div className="flex gap-2">
-                <Button size="sm" onClick={updatePhoneNumber}>Save</Button>
-                <Button size="sm" variant="outline" onClick={() => {
-                  setIsEditingPhone(false);
-                  setNewPhoneNumber(phoneNumber || '');
-                }}>Cancel</Button>
-              </div>
-            </div>
-          ) : (
-            <div className="flex items-center text-sm text-muted-foreground my-1">
-              <Phone className="w-4 h-4 mr-1" />
-              <span>{phoneNumber || profile?.phone || 'Not provided'}</span>
-              <Button 
-                size="sm" 
-                variant="ghost" 
-                className="ml-2 h-6 px-2"
-                onClick={() => setIsEditingPhone(true)}
-              >
-                Edit
-              </Button>
-            </div>
-          )}
-          
-          <div className="flex items-center text-sm text-muted-foreground my-1">
-            <Calendar className="w-4 h-4 mr-1" />
-            <span>Joined {new Date(user.created_at || Date.now()).toLocaleDateString()}</span>
-          </div>
-          
-          {profile?.userType === 'doctor' && (
-            <div className="flex items-center mt-4 space-x-2">
-              <div className="flex items-center">
-                <Switch
-                  id="online-mode"
-                  checked={isOnline}
-                  onCheckedChange={toggleOnlineStatus}
-                />
-                <Label htmlFor="online-mode" className="ml-2">
-                  {isOnline ? (
-                    <span className="flex items-center">
-                      <Circle className="h-3 w-3 fill-green-500 text-green-500 mr-1" />
-                      Online
-                    </span>
-                  ) : (
-                    <span className="flex items-center">
-                      <Circle className="h-3 w-3 fill-gray-400 text-gray-400 mr-1" />
-                      Offline
-                    </span>
+      <AnimatedSection animation="fade-in">
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
+              <Avatar className="h-20 w-20">
+                <AvatarImage src="" alt={username} />
+                <AvatarFallback className="text-2xl">
+                  {username.charAt(0).toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              
+              <div className="flex-1 space-y-4 text-center sm:text-left">
+                <div>
+                  <h2 className="text-xl font-semibold">{username || 'New User'}</h2>
+                  <p className="text-sm text-muted-foreground">{user?.email}</p>
+                  {profile?.userType && (
+                    <div className="mt-1">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
+                        {profile.userType.charAt(0).toUpperCase() + profile.userType.slice(1)}
+                      </span>
+                    </div>
                   )}
-                </Label>
+                </div>
               </div>
             </div>
-          )}
-        </div>
-        
-        <div className="grid grid-cols-2 gap-4">
-          <div className="p-4 bg-card border border-border rounded-lg text-center">
-            <div className="text-2xl font-bold text-primary">0</div>
-            <div className="text-sm text-muted-foreground">Posts</div>
-          </div>
-          
-          <div className="p-4 bg-card border border-border rounded-lg text-center">
-            <div className="text-2xl font-bold text-primary">0</div>
-            <div className="text-sm text-muted-foreground">Helped Animals</div>
-          </div>
-        </div>
+            
+            <Separator className="my-6" />
+            
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-lg font-medium">Profile Information</h3>
+                <p className="text-sm text-muted-foreground">
+                  Update your account profile information
+                </p>
+              </div>
+              
+              <div className="grid gap-4">
+                <div className="grid gap-2">
+                  <label htmlFor="username" className="text-sm font-medium">
+                    Username
+                  </label>
+                  <Input
+                    id="username"
+                    placeholder="Enter your username"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
+                    disabled={isUpdating}
+                  />
+                </div>
+                
+                <Button 
+                  onClick={handleUpdateProfile} 
+                  disabled={isUpdating}
+                  className="w-full sm:w-auto"
+                >
+                  {isUpdating ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Updating...
+                    </>
+                  ) : (
+                    'Update Profile'
+                  )}
+                </Button>
+              </div>
+            </div>
+            
+            <Separator className="my-6" />
+            
+            <ProfileContactForm 
+              userId={user?.id || ''} 
+              initialPhone={profile?.phone} 
+              userType={profile?.userType || ''}
+            />
+            
+            {profile?.userType === 'doctor' && (
+              <>
+                <Separator className="my-6" />
+                <DoctorStatusToggle 
+                  userId={user?.id || ''} 
+                  initialStatus={isOnline}
+                  onStatusChange={handleStatusChange}
+                />
+              </>
+            )}
+          </CardContent>
+        </Card>
       </AnimatedSection>
     </div>
   );
