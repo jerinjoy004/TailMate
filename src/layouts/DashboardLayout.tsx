@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Link, Outlet, useLocation, Navigate } from 'react-router-dom';
-import { Home, Bell, User, LogOut, Plus, Users, Calendar, Coins } from 'lucide-react';
+import { Home, Bell, User, LogOut, Plus, Users, Calendar, Coins, Circle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 
@@ -39,11 +39,12 @@ const DashboardLayout: React.FC = () => {
       ];
     }
 
-    // Add doctor-specific items if needed
+    // Add doctor-specific items
     if (profile?.userType === 'doctor') {
       return [
-        ...commonItems,
+        { icon: Home, label: 'Home', path: '/dashboard' },
         { icon: Coins, label: 'Donations', path: '/dashboard/donations' },
+        { icon: User, label: 'Profile', path: '/dashboard/profile' },
       ];
     }
 

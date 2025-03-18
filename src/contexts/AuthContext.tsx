@@ -12,6 +12,7 @@ interface UserProfile {
   locality?: string;
   licenseNumber?: string;
   isVerified?: boolean;
+  phone?: string;
 }
 
 interface AuthContextType {
@@ -56,7 +57,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           userType: data.usertype as 'normal' | 'volunteer' | 'doctor',
           locality: data.locality,
           licenseNumber: data.licensenumber,
-          isVerified: data.isverified
+          isVerified: data.isverified,
+          phone: data.phone
         };
       }
       
@@ -156,6 +158,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           data: {
             userType: userData.userType,
             name: userData.username,
+            phone: userData.phone,
+            locality: userData.locality
           }
         }
       });
@@ -163,6 +167,37 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (error) throw error;
 
       if (data?.user) {
+        // Also update the profile with additional info
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .upsert({
+            id: data.user.id,
+            username: userData.username,
+            usertype: userData.userType,
+            locality: userData.locality,
+            licensenumber: userData.licenseNumber,
+            phone: userData.phone
+          });
+          
+        if (profileError) {
+          console.error('Error updating profile:', profileError);
+        }
+          
+        // For doctors, also create initial status record
+        if (userData.userType === 'doctor') {
+          const { error: statusError } = await supabase
+            .from('doctor_status')
+            .insert({
+              doctor_id: data.user.id,
+              is_online: false,
+              phone_number: userData.phone
+            });
+            
+          if (statusError) {
+            console.error('Error creating doctor status:', statusError);
+          }
+        }
+
         toast({
           title: "Account created!",
           description: "You've successfully signed up. Please verify your email.",

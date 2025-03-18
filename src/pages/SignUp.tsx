@@ -2,15 +2,19 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link, Navigate } from 'react-router-dom';
-import { Mail, Lock, User, ArrowRight } from 'lucide-react';
+import { Mail, Lock, User, ArrowRight, Phone, MapPin } from 'lucide-react';
 import Button from '@/components/ui-components/Button';
 import AnimatedSection from '@/components/ui-components/AnimatedSection';
 import { useAuth } from '@/contexts/AuthContext';
+import { Input } from '@/components/ui/input';
 
 const SignUp: React.FC = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [phone, setPhone] = useState('');
+  const [locality, setLocality] = useState('');
+  const [licenseNumber, setLicenseNumber] = useState('');
   const [userType, setUserType] = useState<'normal' | 'volunteer' | 'doctor'>('normal');
   const { signUp, loading, user } = useAuth();
 
@@ -22,6 +26,9 @@ const SignUp: React.FC = () => {
     await signUp(email, password, {
       username: name,
       userType,
+      phone: phone,
+      locality: locality,
+      licenseNumber: userType === 'doctor' ? licenseNumber : undefined
     });
   };
 
@@ -142,6 +149,61 @@ const SignUp: React.FC = () => {
                 </button>
               </div>
             </div>
+            
+            {/* Additional fields for all users */}
+            <div className="space-y-2">
+              <label htmlFor="phone" className="block text-sm font-medium">
+                Phone Number
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-muted-foreground">
+                  <Phone size={18} />
+                </div>
+                <Input
+                  id="phone"
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  className="pl-10"
+                  placeholder="+1 (555) 123-4567"
+                />
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <label htmlFor="locality" className="block text-sm font-medium">
+                Location
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-muted-foreground">
+                  <MapPin size={18} />
+                </div>
+                <Input
+                  id="locality"
+                  type="text"
+                  value={locality}
+                  onChange={(e) => setLocality(e.target.value)}
+                  className="pl-10"
+                  placeholder="City, State"
+                />
+              </div>
+            </div>
+            
+            {/* Doctor-specific fields */}
+            {userType === 'doctor' && (
+              <div className="space-y-2">
+                <label htmlFor="licenseNumber" className="block text-sm font-medium">
+                  Medical License Number
+                </label>
+                <Input
+                  id="licenseNumber"
+                  type="text"
+                  value={licenseNumber}
+                  onChange={(e) => setLicenseNumber(e.target.value)}
+                  placeholder="License Number"
+                />
+              </div>
+            )}
             
             <Button
               className="w-full"
