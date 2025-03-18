@@ -1,5 +1,5 @@
 
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
@@ -107,7 +107,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, [fetchUserProfile]);
 
-  const signIn = async (email: string, password: string) => {
+  const signIn = useCallback(async (email: string, password: string) => {
     try {
       setLoading(true);
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -124,7 +124,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           title: "Welcome back!",
           description: "You've successfully signed in.",
         });
-        navigate('/dashboard');
+        
+        // Redirect to the appropriate dashboard based on user type
+        const profileData = await fetchUserProfile(data.user.id);
+        if (profileData?.userType === 'volunteer') {
+          navigate('/dashboard/volunteer');
+        } else {
+          navigate('/dashboard');
+        }
       }
     } catch (error: any) {
       toast({
@@ -135,9 +142,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } finally {
       setLoading(false);
     }
-  };
+  }, [navigate, toast, fetchUserProfile]);
 
-  const signUp = async (email: string, password: string, userData: Partial<UserProfile>) => {
+  const signUp = useCallback(async (email: string, password: string, userData: Partial<UserProfile>) => {
     try {
       setLoading(true);
       
@@ -171,9 +178,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } finally {
       setLoading(false);
     }
-  };
+  }, [navigate, toast]);
 
-  const signOut = async () => {
+  const signOut = useCallback(async () => {
     try {
       setLoading(true);
       await supabase.auth.signOut();
@@ -191,10 +198,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } finally {
       setLoading(false);
     }
-  };
+  }, [navigate, toast]);
+
+  // Memoize the context value to prevent unnecessary re-renders
+  const contextValue = useMemo(() => ({
+    user,
+    profile,
+    signIn,
+    signUp,
+    signOut,
+    loading,
+    userLoading
+  }), [user, profile, signIn, signUp, signOut, loading, userLoading]);
 
   return (
-    <AuthContext.Provider value={{ user, profile, signIn, signUp, signOut, loading, userLoading }}>
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );

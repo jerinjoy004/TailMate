@@ -30,9 +30,19 @@ const DashboardLayout: React.FC = () => {
     // Add volunteer-specific items
     if (profile?.userType === 'volunteer') {
       return [
-        ...commonItems,
-        { icon: Users, label: 'Nearby', path: '/dashboard/volunteer' },
+        // Change home path for volunteers to volunteer dashboard
+        { icon: Home, label: 'Home', path: '/dashboard/volunteer' },
+        { icon: Bell, label: 'Notifications', path: '/dashboard/notifications' },
         { icon: Calendar, label: 'Doctors', path: '/dashboard/doctors' },
+        { icon: Coins, label: 'Donations', path: '/dashboard/donations' },
+        { icon: User, label: 'Profile', path: '/dashboard/profile' },
+      ];
+    }
+
+    // Add doctor-specific items if needed
+    if (profile?.userType === 'doctor') {
+      return [
+        ...commonItems,
         { icon: Coins, label: 'Donations', path: '/dashboard/donations' },
       ];
     }
@@ -49,8 +59,8 @@ const DashboardLayout: React.FC = () => {
   // Check if we're on the main dashboard page (not subpages)
   const isMainDashboard = location.pathname === '/dashboard';
   
-  // Also check if user is not a volunteer (only normal users can create posts)
-  const canCreatePost = profile?.userType !== 'volunteer';
+  // Only normal users can create posts
+  const canCreatePost = profile?.userType !== 'volunteer' && profile?.userType !== 'doctor';
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
@@ -61,9 +71,9 @@ const DashboardLayout: React.FC = () => {
             Tailmate
           </Link>
           <div className="flex items-center gap-4">
-            {profile?.userType === 'volunteer' && (
+            {profile?.userType && (
               <span className="text-xs font-medium px-2 py-1 bg-primary/10 text-primary rounded">
-                Volunteer
+                {profile.userType.charAt(0).toUpperCase() + profile.userType.slice(1)}
               </span>
             )}
             <button 
@@ -84,8 +94,8 @@ const DashboardLayout: React.FC = () => {
 
       {/* Bottom navigation for mobile */}
       <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border py-2 sm:hidden">
-        <div className="container grid grid-cols-4 gap-1">
-          {navItems.slice(0, 4).map((item) => {
+        <div className="container grid grid-cols-5 gap-1">
+          {navItems.slice(0, 5).map((item) => {
             const isActive = location.pathname === item.path;
             return (
               <Link
@@ -106,7 +116,7 @@ const DashboardLayout: React.FC = () => {
         </div>
       </div>
 
-      {/* Floating action button for creating posts - only show on main dashboard for normal users */}
+      {/* Floating action button for creating posts - only show for normal users */}
       {isMainDashboard && canCreatePost && (
         <Link
           to="/dashboard/create-post"
@@ -115,6 +125,30 @@ const DashboardLayout: React.FC = () => {
           <Plus className="h-6 w-6" />
         </Link>
       )}
+      
+      {/* Side navigation for desktop */}
+      <div className="hidden sm:block fixed top-16 left-0 bottom-0 w-64 bg-background border-r border-border p-4">
+        <nav className="space-y-2">
+          {navItems.map((item) => {
+            const isActive = location.pathname === item.path;
+            return (
+              <Link
+                key={item.path}
+                to={item.path}
+                className={cn(
+                  "flex items-center py-2 px-3 rounded-md text-sm font-medium",
+                  isActive
+                    ? "bg-primary/10 text-primary"
+                    : "text-muted-foreground hover:bg-secondary hover:text-foreground"
+                )}
+              >
+                <item.icon className="h-5 w-5 mr-3" />
+                {item.label}
+              </Link>
+            );
+          })}
+        </nav>
+      </div>
     </div>
   );
 };

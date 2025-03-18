@@ -28,7 +28,8 @@ import { useAuth } from "@/contexts/AuthContext";
 const ProtectedUserRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, profile } = useAuth();
   if (!user) return <Navigate to="/signin" />;
-  if (profile?.userType === 'volunteer') return <Navigate to="/dashboard" />;
+  if (profile?.userType === 'volunteer') return <Navigate to="/dashboard/volunteer" />;
+  if (profile?.userType === 'doctor') return <Navigate to="/dashboard" />;
   return <>{children}</>;
 };
 
@@ -37,6 +38,23 @@ const ProtectedVolunteerRoute = ({ children }: { children: React.ReactNode }) =>
   if (!user) return <Navigate to="/signin" />;
   if (profile?.userType !== 'volunteer') return <Navigate to="/dashboard" />;
   return <>{children}</>;
+};
+
+const ProtectedDoctorRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user, profile } = useAuth();
+  if (!user) return <Navigate to="/signin" />;
+  if (profile?.userType !== 'doctor') return <Navigate to="/dashboard" />;
+  return <>{children}</>;
+};
+
+// Redirect to appropriate dashboard based on user type
+const DashboardRouter = () => {
+  const { profile } = useAuth();
+  
+  if (profile?.userType === 'volunteer') {
+    return <Navigate to="/dashboard/volunteer" replace />;
+  }
+  return <Dashboard />;
 };
 
 const AppContent = () => {
@@ -53,7 +71,7 @@ const AppContent = () => {
       
       {/* Dashboard routes */}
       <Route path="/dashboard" element={<DashboardLayout />}>
-        <Route index element={<Dashboard />} />
+        <Route index element={<DashboardRouter />} />
         <Route path="notifications" element={<Notifications />} />
         <Route path="profile" element={<Profile />} />
         <Route path="create-post" element={
@@ -71,8 +89,16 @@ const AppContent = () => {
         <Route path="donate/:donationId" element={<DonateForm />} />
         
         {/* Volunteer routes */}
-        <Route path="volunteer" element={<VolunteerDashboard />} />
-        <Route path="doctors" element={<DoctorAvailability />} />
+        <Route path="volunteer" element={
+          <ProtectedVolunteerRoute>
+            <VolunteerDashboard />
+          </ProtectedVolunteerRoute>
+        } />
+        <Route path="doctors" element={
+          <ProtectedVolunteerRoute>
+            <DoctorAvailability />
+          </ProtectedVolunteerRoute>
+        } />
       </Route>
       
       {/* Catch-all route */}
@@ -81,7 +107,16 @@ const AppContent = () => {
   );
 };
 
-const queryClient = new QueryClient();
+// Create a performant query client configuration
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      staleTime: 60000, // 1 minute
+      retry: 1,
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
