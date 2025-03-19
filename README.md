@@ -1,9 +1,5 @@
 # Welcome
 
-## Project info
-
-**URL**: https://lovable.dev/projects/e4d7608f-4dfb-4346-8cf9-0b4ac3c52ed1
-
 
 ```sh
 # Step 1: Clone the repository using the project's Git URL.
