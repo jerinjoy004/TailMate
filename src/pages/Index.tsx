@@ -5,8 +5,11 @@ import Hero from '@/components/Hero';
 import Features from '@/components/Features';
 import HowItWorks from '@/components/HowItWorks';
 import Footer from '@/components/Footer';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const Index: React.FC = () => {
+  const isMobile = useIsMobile();
+  
   useEffect(() => {
     document.title = 'Tailmate - Animal Welfare Platform';
   }, []);
@@ -16,8 +19,15 @@ const Index: React.FC = () => {
       <Navigation />
       <main className="flex-grow">
         <Hero />
-        <Features />
-        <HowItWorks />
+        {/* On mobile, only show Features section for simplicity */}
+        {isMobile ? (
+          <Features />
+        ) : (
+          <>
+            <Features />
+            <HowItWorks />
+          </>
+        )}
       </main>
       <Footer />
     </div>

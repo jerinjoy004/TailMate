@@ -59,7 +59,7 @@ const Navigation: React.FC = () => {
             <Link to="/signin" className="w-full">
               <Button 
                 variant="outline" 
-                size="default"
+                size="sm"
                 className="w-full"
               >
                 Sign In
@@ -67,7 +67,7 @@ const Navigation: React.FC = () => {
             </Link>
             <Link to="/signup" className="w-full">
               <Button 
-                size="default"
+                size="sm"
                 className="w-full"
               >
                 Get Started

@@ -1,4 +1,3 @@
-
 import React, { useCallback, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -207,7 +206,7 @@ const VolunteerDashboard: React.FC = () => {
           posts={posts}
           isLoading={isLoading || locationLoading}
           error={error as Error | null}
-          locationError={locationError}
+          locationError={locationError ? new Error(locationError) : null}
           onShare={handleShare}
           formatDate={formatDate}
           requestPermission={requestPermission}

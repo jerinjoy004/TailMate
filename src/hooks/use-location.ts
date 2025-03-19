@@ -20,7 +20,8 @@ export const useLocation = (): LocationState => {
     setError(null);
 
     if (!navigator.geolocation) {
-      setError('Geolocation is not supported by your browser');
+      const message = 'Geolocation is not supported by your browser';
+      setError(message);
       setLoading(false);
       toast({
         title: "Geolocation Not Supported",
@@ -32,9 +33,16 @@ export const useLocation = (): LocationState => {
 
     try {
       const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(resolve, reject, {
+        navigator.geolocation.getCurrentPosition(resolve, (err) => {
+          // Handle permission denied specifically
+          if (err.code === 1) { // 1 = PERMISSION_DENIED
+            reject(new Error('Location permission denied. Please enable location services in your browser settings.'));
+          } else {
+            reject(err);
+          }
+        }, {
           enableHighAccuracy: true,
-          timeout: 5000,
+          timeout: 10000, // Extended timeout
           maximumAge: 0
         });
       });
@@ -44,18 +52,27 @@ export const useLocation = (): LocationState => {
         longitude: position.coords.longitude
       });
     } catch (err: any) {
-      setError(err.message || 'Failed to get location');
-      toast({
-        title: "Location Error",
-        description: err.message || "Failed to access your location.",
-        variant: "destructive"
-      });
+      const errorMessage = err.message || 'Failed to get location';
+      setError(errorMessage);
+      
+      // Don't show toast on initial load to avoid annoying users
+      // Only show it when the user explicitly requests location
+      if (!location) {
+        console.error('Location error:', errorMessage);
+      } else {
+        toast({
+          title: "Location Error",
+          description: errorMessage,
+          variant: "destructive"
+        });
+      }
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
+    // Initial location request
     requestPermission();
   }, []);
 
