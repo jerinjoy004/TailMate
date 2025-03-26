@@ -1,5 +1,10 @@
+<<<<<<< HEAD
 
 import React from 'react';
+=======
+import React from 'react';
+import { Link } from 'react-router-dom';
+>>>>>>> b592667 (ui fix)
 import { motion } from 'framer-motion';
 import Button from './ui-components/Button';
 import AnimatedSection from './ui-components/AnimatedSection';
@@ -34,9 +39,17 @@ const Hero: React.FC = () => {
           </AnimatedSection>
           
           <AnimatedSection delay={700} className="flex flex-col sm:flex-row items-center justify-center gap-4">
+<<<<<<< HEAD
             <Button size="lg">
               Get Started
             </Button>
+=======
+            <Link to="/signin">
+              <Button size="lg">
+                Get Started
+              </Button>
+            </Link>
+>>>>>>> b592667 (ui fix)
             <Button variant="outline" size="lg">
               Learn More
             </Button>
