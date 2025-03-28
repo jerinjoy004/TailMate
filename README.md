@@ -28,11 +28,7 @@ This project is built with .
 
 ## To fix in this ASAP
 
-- signout button not working for user
 - post image bucket not set completely
-- most screens are not build right
 - location access problem
-- donation; need to put more functionalities
-- modify UI
 - notification not working
 - authenitcation process should be better
