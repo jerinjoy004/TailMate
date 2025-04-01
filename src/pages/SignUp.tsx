@@ -165,7 +165,7 @@ const SignUp: React.FC = () => {
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   className="pl-10"
-                  placeholder="+1 (555) 123-4567"
+                  placeholder="+91xxxxxxxxxx"
                 />
               </div>
             </div>

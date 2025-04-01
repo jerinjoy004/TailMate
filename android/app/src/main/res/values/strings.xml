@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">TailMate</string>
+    <string name="title_activity_main">TailMate</string>
+    <string name="package_name">com.tailmate.app</string>
+    <string name="custom_url_scheme">com.tailmate.app</string>
+</resources>

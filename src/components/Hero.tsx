@@ -1,8 +1,8 @@
-
 import React from 'react';
 import { motion } from 'framer-motion';
 import Button from './ui-components/Button';
 import AnimatedSection from './ui-components/AnimatedSection';
+import { Link } from 'react-router-dom';
 
 const Hero: React.FC = () => {
   return (
@@ -34,9 +34,11 @@ const Hero: React.FC = () => {
           </AnimatedSection>
           
           <AnimatedSection delay={700} className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Button size="lg">
-              Get Started
-            </Button>
+            <Link to="/signup">
+              <Button size="lg">
+                Get Started
+              </Button>
+            </Link>
             <Button variant="outline" size="lg">
               Learn More
             </Button>
