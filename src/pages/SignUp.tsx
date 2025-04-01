@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link, Navigate } from 'react-router-dom';
@@ -16,13 +15,30 @@ const SignUp: React.FC = () => {
   const [locality, setLocality] = useState('');
   const [licenseNumber, setLicenseNumber] = useState('');
   const [userType, setUserType] = useState<'normal' | 'volunteer' | 'doctor'>('normal');
+  const [fetchingLocation, setFetchingLocation] = useState(false);
+  const [licenseError, setLicenseError] = useState(''); // New state for license error
   const { signUp, loading, user } = useAuth();
+
+  const validateLicense = async (license: string): Promise<boolean> => {
+    // Simulate an API call to validate the license
+    // Replace this with actual API integration
+    const validLicenses = ['DOC123', 'DOC456', 'DOC789']; // Example valid licenses
+    return validLicenses.includes(license);
+  };
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!name || !email || !password) return;
-    
+
+    if (userType === 'doctor') {
+      const isLicenseValid = await validateLicense(licenseNumber);
+      if (!isLicenseValid) {
+        setLicenseError('Invalid license number. Please check and try again.');
+        return;
+      }
+    }
+
+    setLicenseError(''); // Clear any previous error
     await signUp(email, password, {
       username: name,
       userType,
@@ -30,6 +46,26 @@ const SignUp: React.FC = () => {
       locality: locality,
       licenseNumber: userType === 'doctor' ? licenseNumber : undefined
     });
+  };
+
+  const fetchLocation = () => {
+    if (!navigator.geolocation) {
+      alert('Geolocation is not supported by your browser.');
+      return;
+    }
+
+    setFetchingLocation(true);
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        setLocality(`Lat: ${latitude}, Lng: ${longitude}`);
+        setFetchingLocation(false);
+      },
+      (error) => {
+        alert('Unable to fetch location. Please try again.');
+        setFetchingLocation(false);
+      }
+    );
   };
 
   // If user is already logged in, redirect to dashboard
@@ -165,7 +201,7 @@ const SignUp: React.FC = () => {
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   className="pl-10"
-                  placeholder="+91xxxxxxxxxx"
+                  placeholder="+1 (555) 123-4567"
                 />
               </div>
             </div>
@@ -187,6 +223,14 @@ const SignUp: React.FC = () => {
                   placeholder="City, State"
                 />
               </div>
+              <button
+                type="button"
+                onClick={fetchLocation}
+                className="mt-2 px-4 py-2 text-sm bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
+                disabled={fetchingLocation}
+              >
+                {fetchingLocation ? 'Fetching Location...' : 'Use Current Location'}
+              </button>
             </div>
             
             {/* Doctor-specific fields */}
@@ -202,6 +246,9 @@ const SignUp: React.FC = () => {
                   onChange={(e) => setLicenseNumber(e.target.value)}
                   placeholder="License Number"
                 />
+                {licenseError && (
+                  <p className="text-sm text-red-500 mt-1">{licenseError}</p>
+                )}
               </div>
             )}
             
