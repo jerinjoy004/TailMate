@@ -1,0 +1,11 @@
+{
+  "appId": "com.tailmateconnect",
+  "appName": "TailMate Connect",
+  "webDir": "dist",
+  "server": {
+    "androidScheme": "https"
+  },
+  "android": {
+    "javaVersion": "17"
+  }
+} 

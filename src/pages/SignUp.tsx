@@ -1,34 +1,43 @@
-
-import React, { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Link, Navigate } from 'react-router-dom';
-import { Mail, Lock, User, ArrowRight, Phone, MapPin } from 'lucide-react';
-import Button from '@/components/ui-components/Button';
-import AnimatedSection from '@/components/ui-components/AnimatedSection';
-import { useAuth } from '@/contexts/AuthContext';
-import { Input } from '@/components/ui/input';
+import React, { useState } from "react";
+import { motion } from "framer-motion";
+import { Link, Navigate } from "react-router-dom";
+import {
+  Mail,
+  Lock,
+  User,
+  ArrowRight,
+  Phone,
+  MapPin,
+  Loader2,
+} from "lucide-react";
+import Button from "@/components/ui-components/Button";
+import AnimatedSection from "@/components/ui-components/AnimatedSection";
+import { useAuth } from "@/contexts/AuthContext";
+import { Input } from "@/components/ui/input";
 
 const SignUp: React.FC = () => {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [phone, setPhone] = useState('');
-  const [locality, setLocality] = useState('');
-  const [licenseNumber, setLicenseNumber] = useState('');
-  const [userType, setUserType] = useState<'normal' | 'volunteer' | 'doctor'>('normal');
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [phone, setPhone] = useState("");
+  const [locality, setLocality] = useState("");
+  const [licenseNumber, setLicenseNumber] = useState("");
+  const [userType, setUserType] = useState<"normal" | "volunteer" | "doctor">(
+    "normal"
+  );
   const { signUp, loading, user } = useAuth();
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!name || !email || !password) return;
-    
+
     await signUp(email, password, {
       username: name,
       userType,
       phone: phone,
       locality: locality,
-      licenseNumber: userType === 'doctor' ? licenseNumber : undefined
+      licenseNumber: userType === "doctor" ? licenseNumber : undefined,
     });
   };
 
@@ -38,203 +47,215 @@ const SignUp: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <div className="flex-grow flex items-center justify-center p-4">
-        <AnimatedSection 
-          className="w-full max-w-md p-8 rounded-xl shadow-medium bg-card border border-border"
-          animation="scale-in"
-        >
-          <div className="text-center mb-8">
-            <Link to="/" className="inline-block">
-              <h1 className="text-2xl font-semibold text-primary">Tailmate</h1>
+    <div className="min-h-screen flex items-center justify-center p-4">
+      <div className="w-full max-w-md space-y-8">
+        <AnimatedSection delay={100}>
+          <div className="text-center">
+            <Link
+              to="/"
+              className="text-2xl font-bold text-primary inline-flex items-center"
+            >
+              Tailmate
             </Link>
-            <p className="mt-2 text-muted-foreground">Create your account</p>
+            <h2 className="mt-6 text-3xl font-bold tracking-tight">
+              Create your account
+            </h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Join our community and help animals in need
+            </p>
           </div>
-          
-          <form onSubmit={handleSignUp} className="space-y-4">
-            <div className="space-y-2">
-              <label htmlFor="name" className="block text-sm font-medium">
-                Full Name
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-muted-foreground">
-                  <User size={18} />
-                </div>
-                <input
-                  id="name"
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="pl-10 w-full py-2 px-4 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                  placeholder="John Doe"
-                />
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <label htmlFor="email" className="block text-sm font-medium">
-                Email
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-muted-foreground">
-                  <Mail size={18} />
-                </div>
-                <input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="pl-10 w-full py-2 px-4 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                  placeholder="hello@example.com"
-                />
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <label htmlFor="password" className="block text-sm font-medium">
-                Password
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-muted-foreground">
-                  <Lock size={18} />
-                </div>
-                <input
-                  id="password"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="pl-10 w-full py-2 px-4 bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                  placeholder="••••••••"
-                />
-              </div>
-            </div>
-            
+        </AnimatedSection>
+
+        <AnimatedSection delay={200}>
+          <form onSubmit={handleSignUp} className="mt-8 space-y-6">
             <div className="space-y-2">
               <label htmlFor="userType" className="block text-sm font-medium">
                 I am a
               </label>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-3 gap-1 sm:gap-2">
                 <button
                   type="button"
-                  onClick={() => setUserType('normal')}
-                  className={`px-4 py-2 border rounded-md transition-colors ${
-                    userType === 'normal'
-                      ? 'bg-primary text-primary-foreground border-primary'
-                      : 'bg-background text-foreground border-input hover:bg-secondary/50'
+                  onClick={() => setUserType("normal")}
+                  className={`px-2 sm:px-4 py-2 border rounded-md transition-colors text-xs sm:text-sm whitespace-nowrap ${
+                    userType === "normal"
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-background text-foreground border-input hover:bg-secondary/50"
                   }`}
+                  disabled={loading}
                 >
                   Normal User
                 </button>
                 <button
                   type="button"
-                  onClick={() => setUserType('volunteer')}
-                  className={`px-4 py-2 border rounded-md transition-colors ${
-                    userType === 'volunteer'
-                      ? 'bg-primary text-primary-foreground border-primary'
-                      : 'bg-background text-foreground border-input hover:bg-secondary/50'
+                  onClick={() => setUserType("volunteer")}
+                  className={`px-2 sm:px-4 py-2 border rounded-md transition-colors text-xs sm:text-sm whitespace-nowrap ${
+                    userType === "volunteer"
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-background text-foreground border-input hover:bg-secondary/50"
                   }`}
+                  disabled={loading}
                 >
                   Volunteer
                 </button>
                 <button
                   type="button"
-                  onClick={() => setUserType('doctor')}
-                  className={`px-4 py-2 border rounded-md transition-colors ${
-                    userType === 'doctor'
-                      ? 'bg-primary text-primary-foreground border-primary'
-                      : 'bg-background text-foreground border-input hover:bg-secondary/50'
+                  onClick={() => setUserType("doctor")}
+                  className={`px-2 sm:px-4 py-2 border rounded-md transition-colors text-xs sm:text-sm whitespace-nowrap ${
+                    userType === "doctor"
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-background text-foreground border-input hover:bg-secondary/50"
                   }`}
+                  disabled={loading}
                 >
                   Doctor
                 </button>
               </div>
             </div>
-            
-            {/* Additional fields for all users */}
-            <div className="space-y-2">
-              <label htmlFor="phone" className="block text-sm font-medium">
-                Phone Number
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-muted-foreground">
-                  <Phone size={18} />
-                </div>
-                <Input
-                  id="phone"
-                  type="tel"
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  className="pl-10"
-                  placeholder="+1 (555) 123-4567"
-                />
-              </div>
-            </div>
-            
-            <div className="space-y-2">
-              <label htmlFor="locality" className="block text-sm font-medium">
-                Location
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-muted-foreground">
-                  <MapPin size={18} />
-                </div>
-                <Input
-                  id="locality"
-                  type="text"
-                  value={locality}
-                  onChange={(e) => setLocality(e.target.value)}
-                  className="pl-10"
-                  placeholder="City, State"
-                />
-              </div>
-            </div>
-            
-            {/* Doctor-specific fields */}
-            {userType === 'doctor' && (
-              <div className="space-y-2">
-                <label htmlFor="licenseNumber" className="block text-sm font-medium">
-                  Medical License Number
+
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="name" className="block text-sm font-medium">
+                  Full Name
                 </label>
-                <Input
-                  id="licenseNumber"
-                  type="text"
-                  value={licenseNumber}
-                  onChange={(e) => setLicenseNumber(e.target.value)}
-                  placeholder="License Number"
-                />
+                <div className="mt-1 relative">
+                  <Input
+                    id="name"
+                    type="text"
+                    required
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="pl-10"
+                    placeholder="Enter your full name"
+                    disabled={loading}
+                  />
+                  <User className="h-5 w-5 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
+                </div>
               </div>
-            )}
-            
+
+              <div>
+                <label htmlFor="email" className="block text-sm font-medium">
+                  Email address
+                </label>
+                <div className="mt-1 relative">
+                  <Input
+                    id="email"
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="pl-10"
+                    placeholder="Enter your email"
+                    disabled={loading}
+                  />
+                  <Mail className="h-5 w-5 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="password" className="block text-sm font-medium">
+                  Password
+                </label>
+                <div className="mt-1 relative">
+                  <Input
+                    id="password"
+                    type="password"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="pl-10"
+                    placeholder="Create a password"
+                    disabled={loading}
+                  />
+                  <Lock className="h-5 w-5 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="phone" className="block text-sm font-medium">
+                  Phone Number
+                </label>
+                <div className="mt-1 relative">
+                  <Input
+                    id="phone"
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    className="pl-10"
+                    placeholder="Enter your phone number"
+                    disabled={loading}
+                  />
+                  <Phone className="h-5 w-5 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="locality" className="block text-sm font-medium">
+                  Locality
+                </label>
+                <div className="mt-1 relative">
+                  <Input
+                    id="locality"
+                    type="text"
+                    value={locality}
+                    onChange={(e) => setLocality(e.target.value)}
+                    className="pl-10"
+                    placeholder="Enter your locality"
+                    disabled={loading}
+                  />
+                  <MapPin className="h-5 w-5 text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2" />
+                </div>
+              </div>
+
+              {userType === "doctor" && (
+                <div>
+                  <label
+                    htmlFor="licenseNumber"
+                    className="block text-sm font-medium"
+                  >
+                    License Number
+                  </label>
+                  <div className="mt-1">
+                    <Input
+                      id="licenseNumber"
+                      type="text"
+                      value={licenseNumber}
+                      onChange={(e) => setLicenseNumber(e.target.value)}
+                      placeholder="Enter your medical license number"
+                      required
+                      disabled={loading}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
             <Button
-              className="w-full"
-              size="lg"
               type="submit"
+              className="w-full flex items-center justify-center gap-2"
               disabled={loading}
             >
               {loading ? (
-                <span className="flex items-center justify-center">
-                  <motion.div
-                    className="h-5 w-5 border-2 border-t-transparent border-primary-foreground rounded-full"
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                  />
-                </span>
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Creating Account...
+                </>
               ) : (
-                <span className="flex items-center justify-center">
-                  Create Account <ArrowRight className="ml-2" size={18} />
-                </span>
+                <>
+                  Create Account
+                  <ArrowRight className="h-4 w-4" />
+                </>
               )}
             </Button>
+
+            <div className="text-center">
+              <p className="text-sm text-muted-foreground">
+                Already have an account?{" "}
+                <Link to="/signin" className="text-primary hover:underline">
+                  Sign in
+                </Link>
+              </p>
+            </div>
           </form>
-          
-          <div className="mt-6 text-center">
-            <p className="text-sm text-muted-foreground">
-              Already have an account?{" "}
-              <Link to="/signin" className="text-primary hover:underline">
-                Sign in
-              </Link>
-            </p>
-          </div>
         </AnimatedSection>
       </div>
     </div>
