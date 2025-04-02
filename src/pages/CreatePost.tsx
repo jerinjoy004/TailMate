@@ -76,81 +76,82 @@ const CreatePost: React.FC = () => {
     e.preventDefault();
     
     if (!user) {
-      toast({
-        title: "Error",
-        description: "You must be logged in to create a post",
-        variant: "destructive"
-      });
-      return;
+        toast({
+            title: "Error",
+            description: "You must be logged in to create a post",
+            variant: "destructive"
+        });
+        return;
     }
     
     if (!content.trim()) {
-      toast({
-        title: "Error",
-        description: "Post content cannot be empty",
-        variant: "destructive"
-      });
-      return;
+        toast({
+            title: "Error",
+            description: "Post content cannot be empty",
+            variant: "destructive"
+        });
+        return;
     }
     
     try {
-      setUploading(true);
-      
-      let imageUrl: string | null = null;
-      
-      // Upload image if present
-      if (image) {
-        const fileExt = image.name.split('.').pop();
-        const fileName = `${uuidv4()}.${fileExt}`;
-        const filePath = `${user.id}/${fileName}`;
+        setUploading(true);
         
-        // Upload the file
-        const { error: uploadError } = await supabase
-          .storage
-          .from('posts')
-          .upload(filePath, image);
-          
-        if (uploadError) throw uploadError;
+        let imageUrl: string | null = null;
         
-        // Get the public URL
-        imageUrl = getStorageUrl('posts', filePath);
-      }
-      
-      // Add location data if enabled
-      let locationData = null;
-      if (locationEnabled && userLocation) {
-        locationData = `${userLocation.latitude},${userLocation.longitude}`;
-      }
-      
-      // Create the post
-      const { error } = await supabase
-        .from('posts')
-        .insert({
-          user_id: user.id,
-          description: content.trim(),
-          image_url: imageUrl,
-          location: locationData
+        // Upload image if present
+        if (image) {
+            const fileExt = image.name.split('.').pop();
+            const fileName = `${uuidv4()}.${fileExt}`;
+            const filePath = `posts/${fileName}`; // Adjusted to use the correct folder structure
+            
+            // Upload the file
+            const { error: uploadError } = await supabase
+                .storage
+                .from('Post Images') // Updated bucket name
+                .upload(filePath, image);
+                
+            if (uploadError) throw uploadError;
+            
+            // Get the public URL
+            imageUrl = getStorageUrl('Post Images', filePath); // Updated bucket name
+        }
+        
+        // Add location data if enabled
+        let locationData = null;
+        if (locationEnabled && userLocation) {
+            locationData = `${userLocation.latitude},${userLocation.longitude}`;
+        }
+        
+        // Create the post
+        const { error } = await supabase
+            .from('posts')
+            .insert({
+                user_id: user.id,
+                description: content.trim(),
+                image_url: imageUrl,
+                location: locationData
+            });
+        
+        if (error) throw error;
+        
+        toast({
+            title: "Success",
+            description: "Your post has been created",
         });
-      
-      if (error) throw error;
-      
-      toast({
-        title: "Success",
-        description: "Your post has been created",
-      });
-      
-      navigate('/dashboard');
-    } catch (error: any) {
-      console.error('Error creating post:', error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to create post",
-        variant: "destructive"
-      });
+        
+        navigate('/dashboard');
+    } catch (error: unknown) {
+        console.error('Error creating post:', error);
+        toast({
+            title: "Error",
+            description: (error instanceof Error ? error.message : "Failed to create post"),
+            variant: "destructive"
+        });
     } finally {
-      setUploading(false);
+        setUploading(false);
     }
-  };
+};
+
   
   return (
     <div className="space-y-6 pb-20 sm:pb-0">

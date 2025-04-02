@@ -10,7 +10,11 @@ const DashboardLayout: React.FC = () => {
 
   // If still loading auth state, show nothing
   if (userLoading) {
-    return <div className="flex items-center justify-center h-screen">Loading...</div>;
+    return (
+      <div className="flex items-center justify-center h-screen">
+        Loading...
+      </div>
+    );
   }
 
   // If no user is logged in, redirect to sign in
@@ -24,12 +28,11 @@ const DashboardLayout: React.FC = () => {
       { icon: Home, label: 'Home', path: '/dashboard' },
       { icon: Bell, label: 'Notifications', path: '/dashboard/notifications' },
       { icon: User, label: 'Profile', path: '/dashboard/profile' },
+      { icon: Coins, label: 'Donations', path: '/dashboard/donations' },
     ];
 
-    // Add volunteer-specific items
     if (profile?.userType === 'volunteer') {
       return [
-        // Change home path for volunteers to volunteer dashboard
         { icon: Home, label: 'Home', path: '/dashboard/volunteer' },
         { icon: Bell, label: 'Notifications', path: '/dashboard/notifications' },
         { icon: Calendar, label: 'Doctors', path: '/dashboard/doctors' },
@@ -38,7 +41,6 @@ const DashboardLayout: React.FC = () => {
       ];
     }
 
-    // Add doctor-specific items
     if (profile?.userType === 'doctor') {
       return [
         { icon: Home, label: 'Home', path: '/dashboard' },
@@ -47,26 +49,18 @@ const DashboardLayout: React.FC = () => {
       ];
     }
 
-    // Normal user items
-    return [
-      ...commonItems,
-      { icon: Coins, label: 'Donations', path: '/dashboard/donations' },
-    ];
+    return commonItems;
   };
 
   const navItems = getNavItems();
-  
-  // Check if we're on the main dashboard page (not subpages)
   const isMainDashboard = location.pathname === '/dashboard';
-  
-  // Only normal users can create posts
   const canCreatePost = profile?.userType !== 'volunteer' && profile?.userType !== 'doctor';
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
       {/* Top navigation */}
       <header className="sticky top-0 z-50 w-full bg-background border-b border-border">
-        <div className="container flex h-16 items-center justify-between">
+        <div className="container flex h-16 items-center justify-between px-4 sm:px-6">
           <Link to="/" className="text-xl font-semibold text-primary">
             Tailmate
           </Link>
@@ -76,8 +70,8 @@ const DashboardLayout: React.FC = () => {
                 {profile.userType.charAt(0).toUpperCase() + profile.userType.slice(1)}
               </span>
             )}
-            <button 
-              onClick={() => signOut()} 
+            <button
+              onClick={() => signOut()}
               className="flex items-center text-sm font-medium text-muted-foreground hover:text-foreground"
             >
               <LogOut className="mr-2 h-4 w-4" />
@@ -88,13 +82,13 @@ const DashboardLayout: React.FC = () => {
       </header>
 
       {/* Main content */}
-      <main className="flex-1 container py-6 pb-20 sm:pb-6">
+      <main className="flex-1 container py-6 pb-20 sm:pb-6 px-4 sm:px-6">
         <Outlet />
       </main>
 
       {/* Bottom navigation for mobile */}
-      <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border py-2 sm:hidden">
-        <div className="container grid grid-cols-5 gap-1">
+      <div className="fixed bottom-0 left-0 right-0 bg-background border-t border-border py-4 sm:hidden">
+        <div className="container flex justify-between px-6">
           {navItems.slice(0, 5).map((item) => {
             const isActive = location.pathname === item.path;
             return (
@@ -102,13 +96,13 @@ const DashboardLayout: React.FC = () => {
                 key={item.path}
                 to={item.path}
                 className={cn(
-                  "flex flex-col items-center py-2 text-xs font-medium",
+                  "flex flex-col items-center py-2 text-xs font-medium transition-colors",
                   isActive
-                    ? "text-primary"
+                  ? "text-primary"
                     : "text-muted-foreground hover:text-foreground"
                 )}
               >
-                <item.icon className="h-5 w-5 mb-1" />
+                <item.icon className="h-6 w-6 mb-1" />
                 {item.label}
               </Link>
             );
@@ -125,7 +119,7 @@ const DashboardLayout: React.FC = () => {
           <Plus className="h-6 w-6" />
         </Link>
       )}
-      
+
       {/* Side navigation for desktop */}
       <div className="hidden sm:block fixed top-16 left-0 bottom-0 w-64 bg-background border-r border-border p-4">
         <nav className="space-y-2">

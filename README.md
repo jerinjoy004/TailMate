@@ -26,9 +26,3 @@ This project is built with .
 - Tailwind CSS
 - Supabase
 
-## To fix in this ASAP
-
-- post image bucket not set completely
-- location access problem
-- notification not working
-- authenitcation process should be better
