@@ -1,4 +1,3 @@
-
 import React from 'react';
 import DoctorCard from './DoctorCard';
 import { Card } from '@/components/ui/card';
@@ -20,8 +19,6 @@ interface DoctorsListProps {
   isLoading: boolean;
   error: Error | null;
   onRetry: () => void;
-  locationEnabled: boolean;
-  onEnableLocation: () => void;
 }
 
 const DoctorsList: React.FC<DoctorsListProps> = ({
@@ -29,23 +26,7 @@ const DoctorsList: React.FC<DoctorsListProps> = ({
   isLoading,
   error,
   onRetry,
-  locationEnabled,
-  onEnableLocation
 }) => {
-  if (!locationEnabled) {
-    return (
-      <Card className="p-6 text-center">
-        <div className="flex flex-col items-center justify-center">
-          <AlertTriangle size={32} className="mb-4 text-amber-500" />
-          <p className="mb-4">Please enable location access to see doctors near you.</p>
-          <Button onClick={onEnableLocation}>
-            Enable Location Access
-          </Button>
-        </div>
-      </Card>
-    );
-  }
-  
   if (isLoading) {
     return (
       <div className="space-y-4">
@@ -86,7 +67,7 @@ const DoctorsList: React.FC<DoctorsListProps> = ({
           <UserX size={48} className="mb-4 text-muted-foreground" />
           <p className="mb-2 font-medium">No doctors available</p>
           <p className="text-sm text-muted-foreground">
-            There are no doctors currently online near your location.
+            There are no doctors currently online.
           </p>
         </div>
       </Card>

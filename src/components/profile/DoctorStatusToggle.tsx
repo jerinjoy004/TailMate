@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
@@ -28,10 +27,15 @@ const DoctorStatusToggle: React.FC<DoctorStatusToggleProps> = ({
       // Update doctor_status table
       const { error } = await supabase
         .from('doctor_status')
-        .upsert({ 
-          doctor_id: userId, 
-          is_online: newStatus 
-        });
+        .upsert(
+          {
+            doctor_id: userId,
+            is_online: newStatus
+          },
+          {
+            onConflict: 'doctor_id'
+          }
+        );
       
       if (error) throw error;
       

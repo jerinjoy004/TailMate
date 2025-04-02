@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Avatar } from '@/components/ui/avatar';
@@ -35,6 +34,8 @@ const DoctorCard: React.FC<DoctorCardProps> = ({ doctor }) => {
     }
   };
 
+  const formattedDistance = doctor.distance ? doctor.distance.toFixed(1) : 'N/A';
+
   return (
     <Card className="p-4 overflow-hidden transition-all hover:shadow-md">
       <div className="flex items-start gap-4">
@@ -58,12 +59,9 @@ const DoctorCard: React.FC<DoctorCardProps> = ({ doctor }) => {
             </Badge>
           </div>
           
-          {doctor.distance !== null && (
-            <div className="flex items-center text-sm text-muted-foreground mt-2">
-              <MapPin className="h-3.5 w-3.5 mr-1" />
-              <span>{doctor.distance.toFixed(1)} km away</span>
-            </div>
-          )}
+          <div className="text-sm text-gray-500">
+            Distance: {formattedDistance} km
+          </div>
           
           {(doctor.phone || doctor.phone_number) && (
             <div className="mt-4">
