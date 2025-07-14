@@ -1,28 +1,21 @@
-# Welcome
+# 🐾 TailMate
+
+**TailMate** is a community-powered mobile app that helps rescue injured or abandoned animals by connecting citizens, volunteers, and veterinarians.
 
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+## 👤 User Roles
+- **Normal User**: Report cases, comment, and donate
+- **Volunteer**: View nearby posts, create donation requests, contact doctors
+- **Doctor**: Provide medical advice, mark availability, donate
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+## 📱 Core Features
+- Role-based login & profile
+- Image posting with description and location
+- Radius-based volunteer alert
+- Real-time comments under posts
+- Donation management for animal care
+- Doctor listing and booking info
 
-# Step 3: Install the necessary dependencies.
-npm i
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
-
-## What technologies are used for this project?
-
-This project is built with .
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-- Supabase
-
+## 📌 License
+MIT License
